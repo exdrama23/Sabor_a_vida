@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Dispatch, SetStateAction } from 'react';
+import api from '../axiosInstance';
 
 interface AdminLoginProps {
   setIsAdmin: Dispatch<SetStateAction<boolean>>;
@@ -9,31 +10,37 @@ interface AdminLoginProps {
 const AdminLogin = ({ setIsAdmin }: AdminLoginProps) => {
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const SECRET = 'saboradmin';
-    if (password === SECRET) {
-      try {
-        localStorage.setItem('isAdmin', 'true');
-      } catch (e) {}
-      setIsAdmin(true);
-      setError('');
-      navigate('/admin');
-    } else {
-      setError('Senha incorreta');
-    }
-  };
 
   return (
     <div className="pt-24 pb-16 px-6 bg-white min-h-screen flex items-start justify-center">
       <div className="w-full max-w-md mt-12">
         <div className="bg-white border rounded-2xl p-6 shadow">
           <h2 className="text-xl font-semibold mb-4">Acesso Administrador</h2>
-          <p className="text-sm text-stone-500 mb-4">Insira a senha para acessar o painel administrativo.</p>
+          <p className="text-sm text-stone-500 mb-4">Insira o seu usuário e senha acessar o painel administrativo.</p>
 
-          <form onSubmit={submit} className="space-y-4">
+          <form onSubmit={async(e)=>{
+            e.preventDefault();
+            try {
+              const response = await api.post('/loginadmin', {email, password});
+              localStorage.setItem('accessToken', response.data.accessToken);
+              localStorage.setItem('isAdmin', 'true');
+              setIsAdmin(true);
+              setError('');
+              navigate('/admin');
+            } catch (err) {
+              console.error('Erro ao fazer login:', err);
+              setError('Credenciais inválidas.');
+            }
+          }} className="space-y-4">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              className="w-full border px-3 py-2 rounded-lg"
+            />
             <input
               type="password"
               value={password}

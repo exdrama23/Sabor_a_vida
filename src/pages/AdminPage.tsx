@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Trash2 } from 'lucide-react';
 import type { Product } from '../types';
+import api from '../axiosInstance';
 
 interface AdminPageProps {
   products: Product[];
@@ -9,6 +10,7 @@ interface AdminPageProps {
 }
 
 const AdminPage = ({ products, setProducts }: AdminPageProps) => {
+  console.log(products)
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [category, setCategory] = useState('chocolate');
@@ -17,10 +19,12 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
   const [featured, setFeatured] = useState(false);
   const [description, setDescription] = useState('');
   const [message, setMessage] = useState('');
+  const [imageFile, setImageFile] = useState<File>();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onload = () => {
         setImage(reader.result as string);
@@ -29,7 +33,7 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
     }
   };
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async(e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim() || !price.trim()) {
@@ -37,31 +41,51 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
       return;
     }
 
-    const newProduct: Product = {
-      id: Date.now(),
-      name: name.trim(),
-      category,
-      price: Number(price) || 0,
-      featured,
-      image: image.trim() || 'https://via.placeholder.com/800',
-      description: description.trim(),
-    } as Product;
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('category', category);
+    formData.append('price', price);
+    formData.append('featured', featured?'true':'false');
+    if(description) formData.append('description', description);
+    if(imageFile) formData.append('image_file', imageFile);
+    else formData.append('image', image);
 
-    setProducts([...products, newProduct]);
-    setMessage(' Produto adicionado com sucesso!');
+    try {
+      const response = await api.post('/product', formData) as {data: {
+        id: string;
+        name: string;
+        category: string;
+        description: string | null;
+        price: string;
+        featured: boolean;
+        image: string;
+      }};
+      const {data} = response;
+      setProducts([ {...data, price: Number(data.price), description: data.description ?? ''}, ...products]);
+      setMessage(' Produto adicionado com sucesso!');
 
-    setName('');
-    setCategory('chocolate');
-    setPrice('');
-    setImage('');
-    setFeatured(false);
-    setDescription('');
+      setName('');
+      setCategory('chocolate');
+      setPrice('');
+      setImage('');
+      setFeatured(false);
+      setDescription('');
 
-    setTimeout(() => setMessage(''), 3000);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      console.error('Erro ao cadastrar produto:', err)
+    }
   };
 
-  const handleDelete = (id: number) => {
-    setProducts(products.filter((p) => p.id !== id));
+  const handleDelete = async (id: string) => {
+    const prods = products;
+    setProducts(prods.filter((p) => p.id !== id));
+    try {
+      await api.delete(`/product/${id}`)
+    } catch (err) {
+      console.log('Erro ao deletar produto', err)
+      setProducts(prods);
+    }
   };
 
   return (

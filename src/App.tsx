@@ -11,6 +11,7 @@ import CartPage from './pages/CartPage';
 import AdminPage from './pages/AdminPage';
 import AdminLogin from './components/AdminLogin';
 import AboutPage from './pages/AboutPage';
+import api from './axiosInstance';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -19,14 +20,14 @@ function App() {
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
     try {
       return localStorage.getItem('isAdmin') === 'true';
-    } catch (e) {
+    } catch {
       return false;
     }
   });
 
   const initialProducts: Product[] = [
     {
-      id: 1,
+      id: '1',
       name: 'Vulcão de Chocolate Belga',
       category: 'chocolate',
       price: 89.9,
@@ -34,7 +35,7 @@ function App() {
       image: 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=800&q=80',
     },
     {
-      id: 2,
+      id: '2',
       name: 'Vulcão de Morango Fresco',
       category: 'frutas',
       price: 94.9,
@@ -42,7 +43,7 @@ function App() {
       image: 'https://images.unsplash.com/photo-1624353365286-3f8d62dadadf?auto=format&fit=crop&w=800&q=80',
     },
     {
-      id: 3,
+      id: '3',
       name: 'Vulcão Red Velvet',
       category: 'especiais',
       price: 99.9,
@@ -51,12 +52,34 @@ function App() {
     },
   ];
 
+  const [jaBuscou, setJaBuscou] = useState(false);
+
+  async function getProducts(){
+    if(jaBuscou) return;
+    setJaBuscou(true);
+    try {
+      const response = await api('/product') as {data: {
+        id: string;
+        name: string;
+        category: string;
+        description: string;
+        price: string;
+        featured: boolean;
+        image: string;
+      }[]};
+      setProducts(response.data.map(prod=>({...prod, price: Number(prod.price)})));
+    } catch (err) {
+      console.error('Erro ao buscar produtos:', err)
+    }
+  }
+  getProducts()
+
   const [products, setProducts] = useState<Product[]>(initialProducts);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
 
