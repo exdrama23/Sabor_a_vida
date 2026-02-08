@@ -2,12 +2,13 @@
   "name": "sabor_a_vida",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "concurrently \"vite\" \"tsx backend/server.ts\"",
-    "build": "tsc -b && vite build",
+    "build": "tsc -p backend/tsconfig.json && tsc-alias -p backend/tsconfig.json && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node backend/dist/server.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
@@ -50,6 +51,8 @@
     "postcss": "^8.5.6",
     "prisma": "^7.3.0",
     "tailwindcss": "^4.1.18",
+    "tsc-alias": "^1.8.16",
+    "tsconfig-paths": "^4.2.0",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",

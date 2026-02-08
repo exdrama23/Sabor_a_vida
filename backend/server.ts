@@ -40,7 +40,7 @@ const frontend = path.join(__dirname, '../../');
 app.use(express.json());
 if (isProd) app.use(express.static(path.join(frontend, '/dist')));
 
-app.use('/uploads', express.static('uploads'));
+app.use('/api/uploads', express.static('uploads'));
 
 function jwtValidate(req: Request & {admin?: object}, res: Response, next: NextFunction){
     const accessToken = req.headers.authorization?.split(' ')[1];
@@ -58,7 +58,9 @@ function jwtValidate(req: Request & {admin?: object}, res: Response, next: NextF
     }
 }
 
-app.post('/loginadmin', async(req, res)=>{
+const router = express.Router();
+
+router.post('/loginadmin', async(req, res)=>{
     try {
         const {email, password} = req.body;
 
@@ -74,7 +76,7 @@ app.post('/loginadmin', async(req, res)=>{
     }
 })
 
-app.get('/product', async(req, res)=>{
+router.get('/product', async(req, res)=>{
     try {
         const products = await prisma.products.findMany({
             omit: {
@@ -90,20 +92,20 @@ app.get('/product', async(req, res)=>{
 
 const storage = multer.diskStorage({
     destination: 'uploads/',
-    filename: (req, file, cb) => {
+    filename: (_req, file, cb) => {
         const fileName = `${Date.now()}-${file.originalname}`;
         cb(null, fileName);
     }
 });
 const upload = multer({ storage });
 
-app.post('/product', jwtValidate, upload.single('image_file'), async(req, res)=>{
+router.post('/product', jwtValidate, upload.single('image_file'), async(req, res)=>{
     try {
         const {name, category, description, price, featured, image} = req.body;
         const newProduct = await prisma.products.create({
             data: {
                 name, category, description, price,
-                featured: featured==='true', image: req.file? `http://localhost:2923/uploads/${req.file.filename}` : image
+                featured: featured==='true', image: req.file? `http://localhost:2923/api/uploads/${req.file.filename}` : image
             },
             omit: {created_at: true, updated_at: true}
         });
@@ -114,7 +116,7 @@ app.post('/product', jwtValidate, upload.single('image_file'), async(req, res)=>
     }
 })
 
-app.delete('/product/:id', jwtValidate, async(req, res)=>{
+router.delete('/product/:id', jwtValidate, async(req, res)=>{
     try {
         const id = req.params.id as string;
         await prisma.products.delete({where: {id}});
@@ -124,6 +126,8 @@ app.delete('/product/:id', jwtValidate, async(req, res)=>{
         res.status(500).json({error: 'Erro ao remover produto.'})
     }
 })
+
+app.use('/api', router);
 
 if (isProd) app.get(/.*/, (req, res) => res.sendFile(path.join(frontend, '/dist/index.html')));
 
