@@ -35,10 +35,10 @@ app.use(cors({
     maxAge: 24*60*60
 }))
 
-const frontend = path.join(__dirname, '../../');
+const frontend = path.join(__dirname, '../../dist');
 
 app.use(express.json());
-if (isProd) app.use(express.static(path.join(frontend, '/dist')));
+if (isProd) app.use(express.static(path.join(frontend)));
 
 app.use('/api/uploads', express.static('uploads'));
 
@@ -129,6 +129,9 @@ router.delete('/product/:id', jwtValidate, async(req, res)=>{
 
 app.use('/api', router);
 
-if (isProd) app.get(/.*/, (req, res) => res.sendFile(path.join(frontend, '/dist/index.html')));
+if (isProd) app.get(/.*/, (req, res) => res.sendFile(path.join(frontend, '/index.html')));
+
+console.log(frontend)
+console.log(isProd)
 
 server.listen(port, ()=>console.log(`Servidor rodando em http://localhost:${port}`));
