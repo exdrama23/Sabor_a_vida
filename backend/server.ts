@@ -105,7 +105,7 @@ router.post('/product', jwtValidate, upload.single('image_file'), async(req, res
         const newProduct = await prisma.products.create({
             data: {
                 name, category, description, price,
-                featured: featured==='true', image: req.file? `http://localhost:2923/api/uploads/${req.file.filename}` : image
+                featured: featured==='true', image: req.file? `http://localhost:${port}/api/uploads/${req.file.filename}` : image
             },
             omit: {created_at: true, updated_at: true}
         });
