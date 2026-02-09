@@ -1,4 +1,4 @@
-import { ShoppingCart, Minus, Plus, X } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, X, Filter, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CartItem, Product } from '../types';
@@ -21,7 +21,7 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [showCartAdded, setShowCartAdded] = useState(false);
-
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const categories = [
     { id: 'todos', name: 'Todos' },
@@ -103,8 +103,7 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
         extras: [],
       };
     }
-    
-    // Check if item with same ID and customization already exists
+
     const existingIndex = cart.findIndex(
       (item) =>
         item.id === newCartItem.id &&
@@ -154,7 +153,7 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
 
   return (
     <>
-      <div className="pt-24 pb-16 px-4 bg-white min-h-screen">
+      <div className="pt-24 pb-16 px-4 md:px-6 bg-white min-h-screen">
         <div className="container mx-auto max-w-7xl">
           {showCartAdded && (
             <div className="fixed top-24 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in flex items-center gap-4">
@@ -168,17 +167,22 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
             </div>
           )}
 
-          <div className="mb-12 text-center">
-            <h1 className="text-5xl font-light text-stone-800 mb-4 tracking-tight">Nossos Produtos</h1>
+          <div className="mb-8 md:mb-12 text-center">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-light text-stone-800 mb-3 md:mb-4 tracking-tight">
+              Nossos Produtos
+            </h1>
+            <p className="text-stone-600 text-base md:text-lg max-w-2xl mx-auto">
+              Escolha entre nossos deliciosos produtos ou personalize do seu jeito
+            </p>
           </div>
 
-          <div className="flex justify-center items-center gap-4 mb-16">
+          <div className="hidden md:flex justify-between items-center mb-10 lg:mb-16">
             <div className="flex gap-2">
               {categories.map((category) => (
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className={`px-6 py-3 rounded-full font-medium transition-all cursor-pointer ${
+                  className={`px-5 py-2.5 rounded-full font-medium transition-all cursor-pointer whitespace-nowrap ${
                     selectedCategory === category.id
                       ? 'bg-stone-800 text-white'
                       : 'text-stone-600 hover:text-stone-800 hover:bg-stone-100'
@@ -191,7 +195,7 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
 
             <button
               onClick={handleCustomizeFirstProduct}
-              className="px-6 py-3 bg-white border-2 border-rose-500 text-rose-600 rounded-full font-medium hover:bg-rose-50 transition-colors flex items-center gap-2 cursor-pointer"
+              className="px-6 py-3 bg-white border-2 border-rose-500 text-rose-600 rounded-full font-medium hover:bg-rose-50 transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap"
             >
               <span>Personalizar</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -205,11 +209,62 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
             </button>
           </div>
 
-          <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="md:hidden mb-8 flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-stone-100 text-stone-800 rounded-full font-medium cursor-pointer"
+              >
+                <Filter className="w-4 h-4" />
+                <span>Categorias</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${showMobileFilters ? 'rotate-180' : ''}`} />
+              </button>
+
+              <button
+                onClick={handleCustomizeFirstProduct}
+                className="px-4 py-2.5 bg-rose-500 text-white rounded-full font-medium hover:bg-rose-600 transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap"
+              >
+                <span>Personalizar</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {showMobileFilters && (
+              <div className="overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+                <div className="flex gap-2 min-w-max">
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        setSelectedCategory(category.id);
+                        setShowMobileFilters(false);
+                      }}
+                      className={`px-5 py-2.5 rounded-full font-medium transition-all cursor-pointer whitespace-nowrap ${
+                        selectedCategory === category.id
+                          ? 'bg-stone-800 text-white'
+                          : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                      }`}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="group relative bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300"
+                className="group relative bg-white rounded-xl md:rounded-2xl overflow-hidden hover:shadow-lg md:hover:shadow-xl transition-all duration-300 border border-stone-100"
               >
                 <div className="aspect-square overflow-hidden">
                   <img
@@ -218,121 +273,132 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                   {product.featured && (
-                    <div className="absolute top-4 left-4 px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-xs font-medium backdrop-blur-sm">
+                    <div className="absolute top-3 left-3 px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-xs font-medium backdrop-blur-sm">
                       DESTAQUE
                     </div>
                   )}
-                  
                 </div>
-                <div className="p-3 md:p-5">
-                  <h3 className="text-sm md:text-base lg:text-xl font-normal text-stone-800 mb-2 md:mb-3 truncate">{product.name}</h3>
+                <div className="p-4 md:p-5">
+                  <h3 className="text-base md:text-lg font-normal text-stone-800 mb-2 md:mb-3 line-clamp-2 min-h-[3.5rem]">
+                    {product.name}
+                  </h3>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-lg md:text-2xl font-light text-rose-600">R$ {formatPrice(product.price)}</span>
+                      <span className="text-xl md:text-2xl font-light text-rose-600">
+                        R$ {formatPrice(product.price)}
+                      </span>
                     </div>
                     <button
                       onClick={() => addToCart(product)}
-                      className="w-10 h-10 md:w-12 md:h-12 bg-stone-800 text-white rounded-lg flex items-center justify-center hover:bg-stone-700 transition-colors cursor-pointer"
+                      className="w-12 h-12 md:w-12 md:h-12 bg-stone-800 text-white rounded-lg flex items-center justify-center hover:bg-stone-700 transition-colors cursor-pointer active:scale-95"
+                      aria-label={`Adicionar ${product.name} ao carrinho`}
                     >
-                      <ShoppingCart className="w-5 h-5" />
+                      <ShoppingCart className="w-5 h-5 md:w-5 md:h-5" />
                     </button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+
+          {filteredProducts.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-stone-600 text-lg">Nenhum produto encontrado nesta categoria.</p>
+            </div>
+          )}
         </div>
       </div>
 
       {customizingProduct && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white p-6 flex items-center justify-between border-b border-stone-100">
-              <div>
-                <h2 className="text-2xl font-light text-stone-800">Personalizar</h2>
-                <p className="text-stone-600">{customizingProduct.name}</p>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-2 md:p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl md:rounded-2xl max-w-3xl w-full max-h-[95vh] md:max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white p-4 md:p-6 flex items-center justify-between border-b border-stone-100 z-10">
+              <div className="max-w-[70%]">
+                <h2 className="text-lg md:text-2xl font-light text-stone-800 truncate">Personalizar</h2>
+                <p className="text-stone-600 text-sm md:text-base truncate">{customizingProduct.name}</p>
               </div>
               <button
                 onClick={() => {
                   setCustomizingProduct(null);
                   resetCustomization();
                 }}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer flex-shrink-0"
+                aria-label="Fechar"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6">
-              <div className="mb-8">
+            <div className="p-4 md:p-6">
+              <div className="mb-6 md:mb-8">
                 <img
                   src={customizingProduct.image}
                   alt={customizingProduct.name}
-                  className="w-full h-72 object-cover rounded-xl"
+                  className="w-full h-48 md:h-72 object-cover rounded-lg md:rounded-xl"
                 />
               </div>
 
-              <div className="space-y-8">
+              <div className="space-y-6 md:space-y-8">
                 <div>
-                  <h3 className="text-lg font-medium text-stone-800 mb-4">Tamanho</h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <h3 className="text-base md:text-lg font-medium text-stone-800 mb-3 md:mb-4">Tamanho</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                     {sizeOptions.map((size) => (
                       <button
                         key={size.id}
                         onClick={() => setSelectedSize(size.id)}
-                        className={`p-4 border rounded-xl text-center transition-all cursor-pointer ${
+                        className={`p-3 md:p-4 border rounded-lg md:rounded-xl text-center transition-all cursor-pointer ${
                           selectedSize === size.id
                             ? 'border-rose-500 bg-rose-50 text-rose-600'
                             : 'border-stone-200 hover:border-stone-300'
                         }`}
                       >
-                        <div className="font-medium">{size.label}</div>
-                        <div className="text-sm text-stone-500 mt-1">{size.desc}</div>
+                        <div className="font-medium text-sm md:text-base">{size.label}</div>
+                        <div className="text-xs md:text-sm text-stone-500 mt-1">{size.desc}</div>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium text-stone-800 mb-4">Sabor da Massa</h3>
-                  <div className="flex gap-3">
+                  <h3 className="text-base md:text-lg font-medium text-stone-800 mb-3 md:mb-4">Sabor da Massa</h3>
+                  <div className="flex flex-col sm:flex-row gap-3">
                     {flavors.map((flavor) => (
                       <button
                         key={flavor.id}
                         onClick={() => setSelectedFlavor(flavor.id)}
-                        className={`px-4 py-3 border rounded-lg transition-all flex-1 cursor-pointer ${
+                        className={`px-4 py-3 border rounded-lg transition-all cursor-pointer ${
                           selectedFlavor === flavor.id
                             ? 'border-rose-500 bg-rose-50 text-rose-600'
                             : 'border-stone-200 hover:border-stone-300'
                         }`}
                       >
-                        <div className="font-medium">{flavor.name}</div>
+                        <div className="font-medium text-sm md:text-base">{flavor.name}</div>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium text-stone-800 mb-4">Cobertura</h3>
+                  <h3 className="text-base md:text-lg font-medium text-stone-800 mb-3 md:mb-4">Cobertura</h3>
                   <div className="flex flex-wrap gap-2">
                     {toppings.map((topping) => (
                       <button
                         key={topping.id}
                         onClick={() => setSelectedTopping(topping.id)}
-                        className={`px-4 py-2.5 border rounded-lg transition-all cursor-pointer ${
+                        className={`px-3 py-2 md:px-4 md:py-2.5 border rounded-lg transition-all cursor-pointer ${
                           selectedTopping === topping.id
                             ? 'border-rose-500 bg-rose-50 text-rose-600'
                             : 'border-stone-200 hover:border-stone-300'
                         }`}
                       >
-                        <div className="font-medium text-sm">{topping.name}</div>
+                        <div className="font-medium text-xs md:text-sm">{topping.name}</div>
                       </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium text-stone-800 mb-4">Acompanhamentos</h3>
+                  <h3 className="text-base md:text-lg font-medium text-stone-800 mb-3 md:mb-4">Acompanhamentos</h3>
                   <div className="flex flex-wrap gap-2">
                     {extras.map((extra) => (
                       <button
@@ -350,23 +416,23 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                             );
                           }
                         }}
-                        className={`px-4 py-2.5 border rounded-lg transition-all cursor-pointer ${
+                        className={`px-3 py-2 md:px-4 md:py-2.5 border rounded-lg transition-all cursor-pointer ${
                           selectedExtras.includes(extra.id)
                             ? 'border-rose-500 bg-rose-50 text-rose-600'
                             : 'border-stone-200 hover:border-stone-300'
                         }`}
                       >
-                        <div className="font-medium text-sm">{extra.name}</div>
+                        <div className="font-medium text-xs md:text-sm">{extra.name}</div>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="p-4 bg-stone-50 rounded-xl">
+                <div className="p-3 md:p-4 bg-stone-50 rounded-lg md:rounded-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-stone-800">Cobertura Extra</div>
-                      <div className="text-sm text-stone-500">+ R$ 2,00</div>
+                      <div className="font-medium text-stone-800 text-sm md:text-base">Cobertura Extra</div>
+                      <div className="text-xs md:text-sm text-stone-500">+ R$ 2,00</div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -386,13 +452,14 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 border-t border-b border-stone-100">
+                <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-b border-stone-100 gap-4">
                   <div>
-                    <div className="font-medium text-stone-800 mb-3">Quantidade</div>
+                    <div className="font-medium text-stone-800 mb-3 text-sm md:text-base">Quantidade</div>
                     <div className="flex items-center gap-4">
                       <button
                         onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                         className="w-10 h-10 rounded-lg border border-stone-300 flex items-center justify-center hover:bg-stone-100 transition-colors cursor-pointer"
+                        aria-label="Diminuir quantidade"
                       >
                         <Minus className="w-4 h-4" />
                       </button>
@@ -400,34 +467,35 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                       <button
                         onClick={() => setQuantity((q) => q + 1)}
                         className="w-10 h-10 rounded-lg border border-stone-300 flex items-center justify-center hover:bg-stone-100 transition-colors cursor-pointer"
+                        aria-label="Aumentar quantidade"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-center sm:text-right">
                     <div className="text-sm text-stone-500 mb-1">Valor total</div>
-                    <div className="text-3xl font-light text-rose-600">
+                    <div className="text-2xl md:text-3xl font-light text-rose-600">
                       R$ {formatPrice(calculateTotal(customizingProduct?.price ?? 0))}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 flex justify-end gap-4">
+              <div className="mt-6 md:mt-8 pt-4 md:pt-6 flex flex-col sm:flex-row justify-end gap-3 md:gap-4 border-t border-stone-100">
                 <button
                   onClick={() => {
                     setCustomizingProduct(null);
                     resetCustomization();
                   }}
-                  className="px-8 py-3 text-stone-600 rounded-lg font-medium hover:bg-stone-100 transition-colors cursor-pointer"
+                  className="px-6 py-3 text-stone-600 rounded-lg font-medium hover:bg-stone-100 transition-colors cursor-pointer order-2 sm:order-1"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={() => addToCart(customizingProduct, true)}
-                  className="px-8 py-3 bg-stone-800 text-white rounded-lg font-medium hover:bg-stone-700 transition-colors flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-3 bg-stone-800 text-white rounded-lg font-medium hover:bg-stone-700 transition-colors flex items-center justify-center gap-2 cursor-pointer order-1 sm:order-2"
                 >
                   <ShoppingCart className="w-5 h-5" />
                   Adicionar ao Carrinho
@@ -437,6 +505,22 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
           </div>
         </div>
       )}
+
+      <style>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
     </>
   );
 };

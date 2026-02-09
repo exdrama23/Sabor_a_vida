@@ -1,5 +1,6 @@
 import { ChevronRight, Minus, Plus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import HeaderFixo from '../components/HeaderFixo';
 import type { CartItem } from '../types';
 
 interface CartPageProps {
@@ -9,7 +10,7 @@ interface CartPageProps {
 
 const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
   const navigate = useNavigate();
-  const updateQuantity = (id: number, delta: number) => {
+  const updateQuantity = (id: string, delta: number) => {
     setCartItems(
       cartItems.map((item) =>
         item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
@@ -17,7 +18,7 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
     );
   };
 
-  const removeItem = (id: number) => {
+  const removeItem = (id: string) => {
     setCartItems(cartItems.filter((item) => item.id !== id));
   };
 
@@ -26,7 +27,9 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
   const total = subtotal + delivery;
 
   return (
-    <div className="pt-40 pb-24 px-6 bg-white min-h-screen">
+    <>
+      <HeaderFixo />
+      <div className="pt-40 pb-24 px-6 bg-white min-h-screen">
       <div className="container mx-auto max-w-6xl">
         <div className="flex items-center justify-between mb-12">
           <h1 className="text-4xl font-bold text-stone-900">Sua Sacola</h1>
@@ -133,6 +136,7 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

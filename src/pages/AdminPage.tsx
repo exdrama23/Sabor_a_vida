@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Trash2 } from 'lucide-react';
+import HeaderFixo from '../components/HeaderFixo';
 import type { Product } from '../types';
 import api from '../axiosInstance';
 
@@ -17,6 +18,7 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
   const [price, setPrice] = useState('');
   const [image, setImage] = useState('');
   const [featured, setFeatured] = useState(false);
+  const [size, setSize] = useState<'pequeno' | 'medio' | 'grande'>('pequeno');
   const [description, setDescription] = useState('');
   const [message, setMessage] = useState('');
   const [imageFile, setImageFile] = useState<File>();
@@ -46,6 +48,7 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
     formData.append('category', category);
     formData.append('price', price);
     formData.append('featured', featured?'true':'false');
+    formData.append('size', size);
     if(description) formData.append('description', description);
     if(imageFile) formData.append('image_file', imageFile);
     else formData.append('image', image);
@@ -59,13 +62,15 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
         price: string;
         featured: boolean;
         image: string;
+        size?: 'pequeno' | 'medio' | 'grande';
       }};
       const {data} = response;
-      setProducts([ {...data, price: Number(data.price), description: data.description ?? ''}, ...products]);
+      setProducts([ {...data, price: Number(data.price), description: data.description ?? '', size: data.size ?? size}, ...products]);
       setMessage(' Produto adicionado com sucesso!');
 
       setName('');
       setCategory('chocolate');
+      setSize('pequeno');
       setPrice('');
       setImage('');
       setFeatured(false);
@@ -89,7 +94,9 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
   };
 
   return (
-    <div className="pt-32 pb-16 px-6 bg-stone-50 min-h-screen">
+    <>
+      <HeaderFixo />
+      <div className="pt-32 pb-16 px-6 bg-stone-50 min-h-screen">
       <div className="container mx-auto max-w-6xl">
         <button
           onClick={() => navigate('/products')}
@@ -149,6 +156,19 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
                       placeholder="99.90"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-stone-600 mb-1">Tamanho</label>
+                  <select
+                    value={size}
+                    onChange={(e) => setSize(e.target.value as 'pequeno' | 'medio' | 'grande')}
+                    className="w-full border border-stone-200 px-3 py-2 rounded-lg focus:outline-none focus:border-rose-500"
+                  >
+                    <option value="pequeno">Pequeno</option>
+                    <option value="medio">Médio</option>
+                    <option value="grande">Grande</option>
+                  </select>
                 </div>
 
                 <div>
@@ -243,6 +263,11 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
                           <span className="text-xs bg-stone-200 px-2 py-1 rounded capitalize">
                             {product.category}
                           </span>
+                          {product.size && (
+                            <span className="text-xs bg-stone-200 px-2 py-1 rounded capitalize">
+                              {product.size}
+                            </span>
+                          )}
                           {product.featured && <span className="text-xs bg-rose-100 text-rose-600 px-2 py-1 rounded"> Destaque</span>}
                         </div>
                       </div>
@@ -261,6 +286,7 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

@@ -13,11 +13,12 @@ export interface Product {
   category?: string;
   price: number;
   featured?: boolean;
+  size?: 'pequeno' | 'medio' | 'grande';
   image: string;
 }
 
 export interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   quantity: number;

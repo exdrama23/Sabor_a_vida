@@ -1,10 +1,16 @@
 import { Menu, ShoppingBag, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import type { HeaderProps } from '../types';
 import Logo2 from '../assets/logos/Logo2Preta.png';
 
-const Header = ({ isMenuOpen, setIsMenuOpen, cartItems = [] }: HeaderProps) => {
+const Header = ({ isMenuOpen: externalMenuOpen, setIsMenuOpen: externalSetMenuOpen, cartItems = [] }: Partial<HeaderProps> = {}) => {
   const navigate = useNavigate();
+  const [internalMenuOpen, setInternalMenuOpen] = useState(false);
+  
+  // Use internal state if no props provided
+  const isMenuOpen = externalMenuOpen !== undefined ? externalMenuOpen : internalMenuOpen;
+  const setIsMenuOpen = externalSetMenuOpen || setInternalMenuOpen;
   const cartCount = cartItems.length;
 
   return (
