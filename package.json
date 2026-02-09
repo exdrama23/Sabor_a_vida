@@ -3,7 +3,6 @@
   "private": true,
   "version": "0.0.0",
   "type": "commonjs",
-  "packageManager": "pnpm@8.9.0", 
   "scripts": {
     "dev": "concurrently \"vite\" \"tsx backend/server.ts\"",
     "build": "tsc -p backend/tsconfig.json && tsc-alias -p backend/tsconfig.json && vite build",
