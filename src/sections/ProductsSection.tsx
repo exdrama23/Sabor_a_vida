@@ -5,6 +5,9 @@ import CircularGallery from './CircularGallery';
 import { useNavigate } from 'react-router-dom';
 import boloPretoBranco from '../assets/Bolos/boloPretoBranco.jpeg';
 import boloCaramelo from '../assets/Bolos/boloCaramelo.jpeg';
+import Brigadeiro from '../assets/Bolos/Brigadeiro.png';
+import Casadinho from '../assets/Bolos/Casadinho.png';
+import castanha from '../assets/Bolos/Castanha.png';
 
 
 //Aqui é os produtos que estão em destaque na home, não é a listagem completa. A listagem completa é feita na página /products
@@ -12,38 +15,38 @@ import boloCaramelo from '../assets/Bolos/boloCaramelo.jpeg';
 const PRODUCTS: Product[] = [
   {
     id: '1',
-    name: 'Vulcão de Chocolate Com Caramelo',
+    name: 'Chocolate Com Caramelo',
     description: 'Chocolate 70% cacau com recheio de ganache',
     price: 60.00,
     image: boloCaramelo,
   },
   {
     id: '2',
-    name: 'Vulcão Dois Amores',
+    name: 'Dois Amores',
     description: 'Com morangos selecionados e creme de baunilha',
     price: 60.00,
     image: boloPretoBranco,
   },
   {
     id: '3',
-    name: '?',
+    name: 'Brigadeiro',
     description: 'Massa aveludada com cream cheese premium',
     price: 99.90,
-    image: 'https://images.unsplash.com/photo-1574085733277-851d9d856a3a?auto=format&fit=crop&w=800&q=80',
+    image: Brigadeiro,
   },
   {
     id: '4',
-    name: '?',
+    name: 'Casa Dinho',
     description: 'Com doce de leite argentino e nozes',
     price: 84.90,
-    image: 'https://images.unsplash.com/photo-1626803775027-53b7958d43c4?auto=format&fit=crop&w=800&q=80',
+    image: Casadinho,
   },
   {
     id: '5',
-    name: '?',
+    name: 'Castanha',
     description: 'Creme de pistache com toque de baunilha',
     price: 109.90,
-    image: 'https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&w=800&q=80',
+    image: castanha,
   },
 ];
 

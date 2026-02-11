@@ -1,5 +1,5 @@
 import { ShoppingCart, Minus, Plus, X, Filter, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CartItem, Product } from '../types';
 
@@ -15,7 +15,7 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [customizingProduct, setCustomizingProduct] = useState<Product | null>(null);
-  const [selectedSize, setSelectedSize] = useState<Size>('medio');
+  const [selectedSize, setSelectedSize] = useState<Size | ''>('');
   const [selectedFlavor, setSelectedFlavor] = useState('chocolate');
   const [selectedTopping, setSelectedTopping] = useState('chocolate');
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
@@ -59,14 +59,33 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
     { id: 'grande', label: 'Grande', desc: '12-14 porções' },
   ];
 
-  const calculateTotal = (productPrice: number) => {
-    const sizeMultiplier = {
-      pequeno: 0.7,
-      medio: 1,
-      grande: 1.4,
+  // Salvar tamanho selecionado no localStorage
+  useEffect(() => {
+    if (selectedSize) {
+      localStorage.setItem('boloTamanhoSelecionado', selectedSize);
+    }
+  }, [selectedSize]);
+
+  const calculatePrice = (isCustomized: boolean = false) => {
+    if (!isCustomized || !selectedSize) {
+      return 0;
+    }
+    
+    // Preços fixos para bolos personalizados por tamanho
+    const sizePrices = {
+      pequeno: 12,
+      medio: 35,
+      grande: 60,
     };
-    const extraToppingPrice = selectedExtras.includes('extra') ? 2 : 0;
-    return (productPrice * sizeMultiplier[selectedSize] + extraToppingPrice) * quantity;
+    
+    let price = sizePrices[selectedSize as Size];
+    
+    // Adicionar R$ 2 se cobertura extra foi selecionada
+    if (selectedExtras.includes('extra')) {
+      price += 2;
+    }
+    
+    return price;
   };
 
   const filteredProducts =
@@ -77,15 +96,15 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
   const addToCart = (product: Product, isCustomized: boolean = false) => {
     let newCartItem: CartItem;
     
-    if (isCustomized && customizingProduct) {
-      const totalPrice = calculateTotal(product.price);
+    if (isCustomized && customizingProduct && selectedSize) {
+      const pricePerUnit = calculatePrice(true);
       newCartItem = {
-        id: product.id,
+        id: `${product.id}-${selectedSize}-${selectedFlavor}-${selectedTopping}`,
         name: customizingProduct.name,
-        price: totalPrice / quantity,
+        price: pricePerUnit,
         quantity: quantity,
         image: customizingProduct.image,
-        size: selectedSize,
+        size: selectedSize as Size,
         flavor: selectedFlavor,
         topping: selectedTopping,
         extras: selectedExtras.filter(e => e !== 'nenhum'),
@@ -97,9 +116,9 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
         price: product.price,
         quantity: 1,
         image: product.image,
-        size: 'medio',
-        flavor: 'chocolate',
-        topping: 'chocolate',
+        size: undefined,
+        flavor: undefined,
+        topping: undefined,
         extras: [],
       };
     }
@@ -134,7 +153,7 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
   };
 
   const resetCustomization = () => {
-    setSelectedSize('medio');
+    setSelectedSize('');
     setSelectedFlavor('chocolate');
     setSelectedTopping('chocolate');
     setSelectedExtras([]);
@@ -475,10 +494,23 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                   </div>
 
                   <div className="text-center sm:text-right">
-                    <div className="text-sm text-stone-500 mb-1">Valor total</div>
-                    <div className="text-2xl md:text-3xl font-light text-rose-600">
-                      R$ {formatPrice(calculateTotal(customizingProduct?.price ?? 0))}
-                    </div>
+                    {!selectedSize ? (
+                      <div className="text-stone-500">
+                        <div className="text-sm mb-2">Selecione um tamanho</div>
+                        <div className="text-2xl md:text-3xl font-light text-stone-400">R$ 0,00</div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-sm text-stone-500 mb-1">Valor unitário</div>
+                        <div className="text-lg md:text-xl font-light text-stone-700 mb-2">
+                          R$ {formatPrice(calculatePrice(true))}
+                        </div>
+                        <div className="text-sm text-stone-500 mb-1">Valor total</div>
+                        <div className="text-2xl md:text-3xl font-light text-rose-600">
+                          R$ {formatPrice(calculatePrice(true) * quantity)}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -495,7 +527,12 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                 </button>
                 <button
                   onClick={() => addToCart(customizingProduct, true)}
-                  className="px-6 py-3 bg-stone-800 text-white rounded-lg font-medium hover:bg-stone-700 transition-colors flex items-center justify-center gap-2 cursor-pointer order-1 sm:order-2"
+                  disabled={!selectedSize}
+                  className={`px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 cursor-pointer order-1 sm:order-2 transition-colors ${
+                    selectedSize
+                      ? 'bg-stone-800 text-white hover:bg-stone-700'
+                      : 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                  }`}
                 >
                   <ShoppingCart className="w-5 h-5" />
                   Adicionar ao Carrinho

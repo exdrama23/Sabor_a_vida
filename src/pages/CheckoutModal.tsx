@@ -74,6 +74,8 @@ const CheckoutModal = ({
 
   // Gerar mensagem para WhatsApp
   const generateWhatsAppMessage = () => {
+    const boloTamanho = localStorage.getItem('boloTamanhoSelecionado') || 'Não informado';
+    
     const itemsList = cartItems.map(item => 
       `• ${item.name} - Qtd: ${item.quantity} x R$ ${item.price.toFixed(2)} = R$ ${(item.price * item.quantity).toFixed(2)}`
     ).join('\n');
@@ -97,6 +99,9 @@ ${addressData.pontoReferencia ? `Ponto de Referência: ${addressData.pontoRefere
 
 *ITENS DO PEDIDO*
 ${itemsList}
+
+*TAMANHO DO BOLO*
+${boloTamanho}
 
 *RESUMO DO PAGAMENTO*
 Subtotal: R$ ${subtotal.toFixed(2)}
@@ -1114,6 +1119,12 @@ Aguardando confirmação!
                   <div>
                     <h4 className="text-lg font-bold text-stone-900 mb-4">Resumo do Pedido</h4>
                     <div className="bg-stone-50 rounded-xl p-6">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <p className="text-sm text-blue-700">
+                          <span className="font-bold">Tamanho do Bolo: </span>
+                          {(localStorage.getItem('boloTamanhoSelecionado') || 'Não informado').charAt(0).toUpperCase() + (localStorage.getItem('boloTamanhoSelecionado') || 'Não informado').slice(1)}
+                        </p>
+                      </div>
                       <div className="space-y-4">
                         <div className="flex justify-between text-stone-600">
                           <span>Subtotal</span>

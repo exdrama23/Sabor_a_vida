@@ -2,6 +2,11 @@ import { ChefHat, Clock, Star, Truck } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { gsap } from '../lib/gsap';
 import type { Feature } from '../types';
+import CenouraComchocolate from '../assets/Bolos/CenouraComchocolate.png';
+import ChocolateLeite from '../assets/Bolos/Cocholate com doce de leite.png';
+import chocolate from '../assets/Bolos/Chocolate.png';
+import Castanha from '../assets/Bolos/Castanha.png';
+
 
 const AboutSection = () => {
   const aboutRef = useRef<HTMLElement | null>(null);
@@ -43,14 +48,14 @@ const AboutSection = () => {
               {/* Essas imagens que ficam no sobre, as 4 imagens de demonstração */}
               <div className="rounded-2xl overflow-hidden shadow-xl">
                 <img
-                  src="https://images.unsplash.com/photo-1626803775151-61d756612f97?auto=format&fit=crop&w=800&q=80"
+                  src={CenouraComchocolate}
                   alt="Preparo artesanal"
                   className="w-full h-80 object-cover hover:scale-105 transition-transform duration-700"
                 />
               </div>
               <div className="rounded-2xl overflow-hidden shadow-xl">
                 <img
-                  src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&q=80"
+                  src={ChocolateLeite}
                   alt="Ingredientes selecionados"
                   className="w-full h-64 object-cover hover:scale-105 transition-transform duration-700"
                 />
@@ -59,14 +64,14 @@ const AboutSection = () => {
             <div className="pt-12 space-y-6">
               <div className="rounded-2xl overflow-hidden shadow-xl">
                 <img
-                  src="https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80"
+                  src={chocolate}
                   alt="Atendimento personalizado"
                   className="w-full h-64 object-cover hover:scale-105 transition-transform duration-700"
                 />
               </div>
               <div className="rounded-2xl overflow-hidden shadow-xl">
                 <img
-                  src="https://images.unsplash.com/photo-1621303837174-89787a7d4729?auto=format&fit=crop&w=800&q=80"
+                  src={Castanha}
                   alt="Ambiente da confeitaria"
                   className="w-full h-80 object-cover hover:scale-105 transition-transform duration-700"
                 />

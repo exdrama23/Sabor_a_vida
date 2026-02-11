@@ -27,8 +27,8 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const delivery = cartItems.length > 0 ? 15.9 : 0;
-  const total = subtotal + delivery;
+  const delivery = 0;
+  const total = subtotal;
 
   const handleConfirmPayment = async (checkoutData: CheckoutFormData) => {
     console.log('Dados do checkout:', checkoutData);
@@ -60,7 +60,7 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
           }
         },
         shipments: {
-          cost: delivery,
+          cost: 0,
           mode: 'custom'
         },
         back_urls: {
@@ -198,12 +198,6 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
                     <span>Subtotal</span>
                     <span className="font-medium">R$ {subtotal.toFixed(2).replace('.', ',')}</span>
                   </div>
-                  {cartItems.length > 0 && (
-                    <div className="flex justify-between text-stone-600">
-                      <span>Entrega</span>
-                      <span className="font-medium">R$ {delivery.toFixed(2).replace('.', ',')}</span>
-                    </div>
-                  )}
                   <div className="border-t border-stone-200 pt-4 mt-4">
                     <div className="flex justify-between text-xl font-bold text-stone-900">
                       <span>Total</span>
