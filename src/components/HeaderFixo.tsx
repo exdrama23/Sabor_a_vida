@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import type { HeaderProps } from '../types';
 import Logo2 from '../assets/logos/Logo2Preta.png';
+import LogoMarrom from '../assets/logos/LogoMarrom.png';
 
 const Header = ({ isMenuOpen: externalMenuOpen, setIsMenuOpen: externalSetMenuOpen, cartItems = [] }: Partial<HeaderProps> = {}) => {
   const navigate = useNavigate();
   const [internalMenuOpen, setInternalMenuOpen] = useState(false);
-  
+
   // Use internal state if no props provided
   const isMenuOpen = externalMenuOpen !== undefined ? externalMenuOpen : internalMenuOpen;
   const setIsMenuOpen = externalSetMenuOpen || setInternalMenuOpen;
@@ -28,7 +29,14 @@ const Header = ({ isMenuOpen: externalMenuOpen, setIsMenuOpen: externalSetMenuOp
             <img
               src={Logo2}
               alt="Logo Sabor à Vida"
-              className="w-12 h-12 scale-[5] origin-left object-contain"
+              className="hidden md:block w-12 h-12 scale-[5] origin-left object-contain"
+            />
+
+            {/* mobile */}
+            <img
+              src={Logo2}
+              alt="Logo Sabor à Vida"
+              className="block md:hidden w-12 h-12 scale-[3.5] origin-left object-contain"
             />
           </button>
 

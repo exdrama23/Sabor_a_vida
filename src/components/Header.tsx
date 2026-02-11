@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { HeaderProps } from '../types';
 import Logo from '../assets/logos/Logo2.png';
 import Logo2 from '../assets/logos/Logo2Preta.png';
+import LogoMarrom from '../assets/logos/LogoMarrom.png';
 
 const Header = ({ isMenuOpen, setIsMenuOpen, cartItems = [] }: HeaderProps) => {
   const navigate = useNavigate();
@@ -20,9 +21,8 @@ const Header = ({ isMenuOpen, setIsMenuOpen, cartItems = [] }: HeaderProps) => {
   }, []);
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-white shadow-sm' : 'bg-transparent'
-    }`}>
+    <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-sm' : 'bg-transparent'
+      }`}>
       <div className="container mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
           <button
@@ -36,7 +36,14 @@ const Header = ({ isMenuOpen, setIsMenuOpen, cartItems = [] }: HeaderProps) => {
             <img
               src={isScrolled ? Logo2 : Logo}
               alt="Logo Sabor à Vida"
-              className="w-12 h-12 scale-[5] origin-left object-contain"
+              className="hidden md:block w-12 h-12 scale-[5] origin-left object-contain"
+            />
+
+            {/* mobile */}
+            <img
+              src={LogoMarrom}
+              alt="Logo Sabor à Vida"
+              className="block md:hidden w-12 h-12 scale-[3.5] origin-left object-contain"
             />
 
           </button>
@@ -44,25 +51,22 @@ const Header = ({ isMenuOpen, setIsMenuOpen, cartItems = [] }: HeaderProps) => {
           <div className="hidden lg:flex items-center space-x-10">
             <button
               onClick={() => navigate('/')}
-              className={`transition-colors font-medium text-sm tracking-wide ${
-                isScrolled ? 'text-stone-800 hover:text-rose-600' : 'text-white hover:text-rose-300'
-              } cursor-pointer`}
+              className={`transition-colors font-medium text-sm tracking-wide ${isScrolled ? 'text-stone-800 hover:text-rose-600' : 'text-white hover:text-rose-300'
+                } cursor-pointer`}
             >
               INÍCIO
             </button>
             <button
               onClick={() => navigate('/products')}
-              className={`transition-colors font-medium text-sm tracking-wide ${
-                isScrolled ? 'text-stone-800 hover:text-rose-600' : 'text-white hover:text-rose-300'
-              } cursor-pointer`}
+              className={`transition-colors font-medium text-sm tracking-wide ${isScrolled ? 'text-stone-800 hover:text-rose-600' : 'text-white hover:text-rose-300'
+                } cursor-pointer`}
             >
               PRODUTOS
             </button>
             <button
               onClick={() => navigate('/about')}
-              className={`transition-colors font-medium text-sm tracking-wide ${
-                isScrolled ? 'text-stone-800 hover:text-rose-600' : 'text-white hover:text-rose-300'
-              } cursor-pointer`}
+              className={`transition-colors font-medium text-sm tracking-wide ${isScrolled ? 'text-stone-800 hover:text-rose-600' : 'text-white hover:text-rose-300'
+                } cursor-pointer`}
             >
               SOBRE
             </button>
@@ -73,9 +77,8 @@ const Header = ({ isMenuOpen, setIsMenuOpen, cartItems = [] }: HeaderProps) => {
               onClick={() => navigate('/cart')}
               className="relative p-3 hover:bg-stone-50 rounded-xl transition-all group cursor-pointer"
             >
-              <ShoppingBag className={`w-6 h-6 transition-colors ${
-                isScrolled ? 'text-stone-800 group-hover:text-rose-600' : 'text-white group-hover:text-rose-300'
-              }`} />
+              <ShoppingBag className={`w-6 h-6 transition-colors ${isScrolled ? 'text-stone-800 group-hover:text-rose-600' : 'text-white group-hover:text-rose-300'
+                }`} />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-600 text-white text-xs font-bold rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
                   {cartCount}
@@ -84,9 +87,8 @@ const Header = ({ isMenuOpen, setIsMenuOpen, cartItems = [] }: HeaderProps) => {
             </button>
 
             <button
-              className={`lg:hidden p-2 hover:bg-stone-50 rounded-lg transition-colors ${
-                isScrolled ? 'text-stone-800' : 'text-white'
-              }`}
+              className={`lg:hidden p-2 hover:bg-stone-50 rounded-lg transition-colors ${isScrolled ? 'text-stone-800' : 'text-white'
+                }`}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

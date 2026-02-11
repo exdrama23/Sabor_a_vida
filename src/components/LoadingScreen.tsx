@@ -1,3 +1,4 @@
+import LogoLoading from '../assets/logos/logoLoading.png'
 const LoadingScreen = () => (
   <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
     <div className="relative">
@@ -8,9 +9,12 @@ const LoadingScreen = () => (
         ></div>
       </div>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-4xl animate-pulse" style={{ animationDuration: '2s' }}>
-          🍰
-        </span>
+         <img
+          src={LogoLoading}
+          alt="Logo carregando"
+          className="w-48 h-48 animate-pulse scale[5]  object-contain"
+          style={{ animationDuration: '2s' }}
+        />
       </div>
     </div>
     <h2 className="mt-8 text-3xl font-bold text-rose-800 tracking-tight">Sabor à Vida</h2>

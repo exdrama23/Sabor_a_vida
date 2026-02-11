@@ -34,3 +34,54 @@ export interface Feature {
   title: string;
   desc: string;
 }
+
+// Checkout / Modal types
+export interface CustomerData {
+  nomeCompleto: string;
+  telefone: string;
+  email: string;
+  cpf: string;
+}
+
+export interface AddressData {
+  cep: string;
+  rua: string;
+  numero: string;
+  complemento?: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  pontoReferencia?: string;
+  tipoEndereco: 'casa' | 'apartamento' | 'trabalho';
+  observacoes?: string;
+}
+
+export interface CreditCardData {
+  tipoCartao: string;
+  nomeTitular: string;
+  numeroCartao: string;
+  validade: string;
+  cvv: string;
+  parcelas: number;
+}
+
+export interface PaymentMethodData {
+  metodo: 'pix' | 'cartao' | 'whatsapp';
+  cartao?: CreditCardData;
+}
+
+export interface CheckoutFormData {
+  etapa1: CustomerData;
+  etapa2: AddressData;
+  etapa3: PaymentMethodData;
+}
+
+export interface CheckoutModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  cartItems: CartItem[];
+  subtotal: number;
+  delivery: number;
+  total: number;
+  onConfirmPayment: (data: CheckoutFormData) => void;
+}

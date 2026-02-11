@@ -10,7 +10,7 @@ const Footer = () => {
               
               <button
             onClick={() => ('home')}
-            className="relative flex items-center gap-3 group">
+            className="relative flex items-center gap-3 group cursor-pointer">
 
             <div className="w-12 h-12 rounded-xl" />
             <img
@@ -82,7 +82,7 @@ const Footer = () => {
                 placeholder="Seu e-mail"
                 className="flex-1 bg-stone-900 border border-stone-800 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-rose-600"
               />
-              <button className="px-6 py-3 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors text-sm font-medium">
+              <button className="px-6 py-3 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors text-sm font-medium cursor-pointer">
                 Inscrever
               </button>
             </div>

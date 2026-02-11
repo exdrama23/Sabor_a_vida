@@ -6,9 +6,17 @@ import cors from 'cors';
 import prisma from './db';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
+import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 const isProd = process.env.NODE_ENV === 'production';
+
+// Configurar Mercado Pago
+const mercadopagoAccessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN || 'TEST-8225018086266291-020819-cd2a293f4c9e16780ddc5034a732286e-246177773';
+const mercadopagoPublicKey = process.env.MERCADO_PAGO_PUBLIC_KEY || 'TEST-47faef05-fa43-43bb-b7e7-43501a862284';
+
+const clientConfig = new MercadoPagoConfig({ accessToken: mercadopagoAccessToken });
+const paymentClient = new Payment(clientConfig);
 
 const app = express();
 const port = process.env.PORT || 2923;
@@ -126,6 +134,186 @@ router.delete('/product/:id', jwtValidate, async(req, res)=>{
         res.status(500).json({error: 'Erro ao remover produto.'})
     }
 })
+
+// Endpoint para pagamento com cartão de crédito
+router.post('/payment/card', async(req, res) => {
+    try {
+        const { 
+            amount, 
+            token, 
+            cardType,
+            cardHolder, 
+            installments,
+            description,
+            payer
+        } = req.body;
+
+        // Validar dados obrigatórios
+        if (!amount || !token || !cardHolder || !payer) {
+            return res.status(400).json({ error: 'Dados incompletos para o pagamento' });
+        }
+
+        // Determinar o payment_method_id baseado no tipo de cartão
+        let paymentMethodId = 'credit_card';
+        if (cardType) {
+            const cardTypeMap: Record<string, string> = {
+                'visa': 'visa',
+                'mastercard': 'mastercard',
+                'amex': 'amex',
+                'elo': 'elo',
+                'hipercard': 'hipercard'
+            };
+            paymentMethodId = cardTypeMap[cardType.toLowerCase()] || 'credit_card';
+        }
+
+        const createPaymentRequest = {
+            transaction_amount: parseFloat(amount),
+            payment_method_id: paymentMethodId,
+            installments: parseInt(installments) || 1,
+            description: description || 'Compra - Sabor à Vida',
+            token: token, // Token gerado no frontend
+            payer: {
+                email: payer.email,
+                first_name: payer.firstName,
+                last_name: payer.lastName,
+                identification: {
+                    type: 'CPF',
+                    number: payer.cpf?.replace(/\D/g, '') || ''
+                }
+            }
+        };
+
+        console.log('Processing card payment:', { ...createPaymentRequest, token: '***' });
+
+        const paymentData = await paymentClient.create({
+            body: createPaymentRequest
+        });
+
+        if (paymentData && paymentData.id) {
+            console.log('Card payment successful:', paymentData.id);
+            res.status(200).json({
+                success: true,
+                paymentId: paymentData.id,
+                status: paymentData.status,
+                statusDetail: paymentData.status_detail
+            });
+        } else {
+            console.error('Card payment failed:', paymentData);
+            res.status(400).json({ 
+                error: 'Erro ao processar pagamento com cartão',
+                details: (paymentData as any)?.message || 'Unknown error'
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao processar pagamento com cartão:', error);
+        const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+        res.status(500).json({ 
+            error: 'Erro ao processar pagamento com cartão',
+            details: errorMsg
+        });
+    }
+});
+
+// Endpoint para pagamento com Pix
+router.post('/payment/pix', async(req, res) => {
+    try {
+        const { 
+            amount, 
+            description, 
+            payer,
+            externalReference
+        } = req.body;
+
+        if (!amount || !payer) {
+            return res.status(400).json({ error: 'Dados incompletos para o pagamento Pix' });
+        }
+
+        const createPaymentRequest = {
+            transaction_amount: parseFloat(amount),
+            payment_method_id: 'pix',
+            description: description || 'Compra - Sabor à Vida',
+            payer: {
+                email: payer.email,
+                first_name: payer.firstName,
+                last_name: payer.lastName,
+                identification: {
+                    type: 'CPF',
+                    number: payer.cpf?.replace(/\D/g, '') || ''
+                }
+            },
+            external_reference: externalReference || `order_${Date.now()}`
+        };
+
+        console.log('Processing PIX payment:', createPaymentRequest);
+
+        const paymentData = await paymentClient.create({
+            body: createPaymentRequest
+        });
+
+        if (paymentData && paymentData.id) {
+            // Extrair QR Code do Pix
+            const pixQrCode = (paymentData as any).point_of_interaction?.qr_code?.qr_code || null;
+            console.log('PIX payment successful:', paymentData.id);
+
+            res.status(200).json({
+                success: true,
+                paymentId: paymentData.id,
+                status: paymentData.status,
+                statusDetail: (paymentData as any).status_detail,
+                qrCode: pixQrCode,
+                pixData: (paymentData as any).point_of_interaction?.qr_code || null
+            });
+        } else {
+            console.error('PIX payment failed:', paymentData);
+            res.status(400).json({ 
+                error: 'Erro ao gerar Pix',
+                details: (paymentData as any)?.message || 'Unknown error'
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao processar pagamento Pix:', error);
+        const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+        res.status(500).json({ 
+            error: 'Erro ao processar pagamento Pix',
+            details: errorMsg
+        });
+    }
+});
+
+// Endpoint para obter token do cartão (front-end deve chamar)
+router.post('/payment/card-token', async(req, res) => {
+    try {
+        const { cardNumber, cardHolder, expirationMonth, expirationYear, securityCode } = req.body;
+
+        if (!cardNumber || !cardHolder || !expirationMonth || !expirationYear || !securityCode) {
+            return res.status(400).json({ error: 'Dados incompletos do cartão' });
+        }
+
+        // Remover espaços do número do cartão
+        const cleanCardNumber = cardNumber.replace(/\s/g, '');
+
+        // Este endpoint é apenas informativo - a tokenização real deve ser feita no frontend
+        // usando a biblioteca JS do Mercado Pago
+        res.status(200).json({
+            message: 'Use a biblioteca JavaScript do Mercado Pago para tokenizar o cartão',
+            publicKey: mercadopagoPublicKey
+        });
+    } catch (error) {
+        console.error('Erro ao gerar token do cartão:', error);
+        res.status(500).json({ error: 'Erro ao gerar token do cartão' });
+    }
+});
+
+// Webhook para notificações do Mercado Pago
+router.post('/webhook/mercadopago', async(req, res) => {
+    try {
+        console.log('Webhook Mercado Pago:', req.body);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Erro no webhook:', error);
+        res.status(500).json({ error: 'Erro ao processar webhook' });
+    }
+});
 
 app.use('/api', router);
 
