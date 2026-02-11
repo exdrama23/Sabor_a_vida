@@ -9,7 +9,7 @@ const HeroSection = () => {
   const desktopImgRef = useRef<HTMLImageElement | null>(null)
   const mobileImgRef = useRef<HTMLImageElement | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isDesktop, setIsDesktop] = useState<boolean>(() => {
+  const [isDesktop] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true
     return window.matchMedia('(min-width: 768px)').matches
   })
@@ -31,7 +31,6 @@ const HeroSection = () => {
   }, [])
 
   useEffect(() => {
-    // If the relevant image is already cached/loaded, clear loading.
     const checkLoaded = () => {
       const targetRef = isDesktop ? desktopImgRef.current : mobileImgRef.current
       if (targetRef && targetRef.complete) {
@@ -40,7 +39,6 @@ const HeroSection = () => {
     }
 
     checkLoaded()
-    // don't add resize listeners aggressively; we only care initial view
   }, [isDesktop])
 
   return (
@@ -71,7 +69,7 @@ const HeroSection = () => {
       loading="eager"
       fetchPriority="high"
       onLoad={() => { if (!isDesktop) setLoading(false) }}
-      className="block md:hidden absolute inset-0 w-full h-full object-cover object-right-top"
+      className="block md:hidden absolute inset-0 w-full h-full object-cover object-top-right"
     />
   </section>
   </>

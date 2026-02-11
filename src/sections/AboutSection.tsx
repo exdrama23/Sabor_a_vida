@@ -6,6 +6,7 @@ import type { Feature } from '../types';
 const AboutSection = () => {
   const aboutRef = useRef<HTMLElement | null>(null);
 
+  //aqui são os textos que estão dentro de um retangulo no sobre
   const features: Feature[] = [
     { icon: Star, title: 'Ingredientes Premium', desc: 'Seleção rigorosa de fornecedores' },
     { icon: Clock, title: 'Frescor Garantido', desc: 'Produzido e entregue no mesmo dia' },
@@ -39,6 +40,7 @@ const AboutSection = () => {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="hidden md:grid grid-cols-2 gap-6">
             <div className="space-y-6">
+              {/* Essas imagens que ficam no sobre, as 4 imagens de demonstração */}
               <div className="rounded-2xl overflow-hidden shadow-xl">
                 <img
                   src="https://images.unsplash.com/photo-1626803775151-61d756612f97?auto=format&fit=crop&w=800&q=80"
@@ -71,7 +73,7 @@ const AboutSection = () => {
               </div>
             </div>
           </div>
-
+          {/*Aqui é onde fica os modificadores do sobre*/}
             <div className="space-y-8">
             <div className="about-item">
               <span className="text-rose-600 font-bold text-sm tracking-widest uppercase">Nossa Filosofia</span>
@@ -96,7 +98,7 @@ const AboutSection = () => {
             <div className="grid sm:grid-cols-2 gap-6 pt-4 about-item">
               {features.map((feature, index) => (
                 <div key={index} className="flex items-start gap-4 p-4 hover:bg-stone-50 rounded-xl transition-colors">
-                  <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center shrink-0">
                     <feature.icon className="w-6 h-6 text-rose-600" />
                   </div>
                   <div>

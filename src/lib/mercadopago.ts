@@ -1,4 +1,4 @@
-export const PUBLIC_KEY = 'TEST-47faef05-fa43-43bb-b7e7-43501a862284';
+const PUBLIC_KEY = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY;
 
 export function initMercadoPago() {
   if (typeof window !== 'undefined' && (window as any).MercadoPago) {
@@ -48,7 +48,8 @@ export async function tokenizeCard(
 
 export function getMercadoPagoInstance() {
   if (typeof window !== 'undefined' && (window as any).MercadoPago) {
-    return new (window as any).MercadoPago(PUBLIC_KEY, { locale: 'pt-BR' });
+    const key = import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || 'TEST-47faef05-fa43-43bb-b7e7-43501a862284';
+    return new (window as any).MercadoPago(key, { locale: 'pt-BR' });
   }
   return null;
 }

@@ -35,7 +35,6 @@ export interface Feature {
   desc: string;
 }
 
-// Checkout / Modal types
 export interface CustomerData {
   nomeCompleto: string;
   telefone: string;

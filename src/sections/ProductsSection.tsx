@@ -2,39 +2,45 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { gsap } from '../lib/gsap';
 import type { Product } from '../types';
 import CircularGallery from './CircularGallery';
+import { useNavigate } from 'react-router-dom';
+import boloPretoBranco from '../assets/Bolos/boloPretoBranco.jpeg';
+import boloCaramelo from '../assets/Bolos/boloCaramelo.jpeg';
 
+
+//Aqui é os produtos que estão em destaque na home, não é a listagem completa. A listagem completa é feita na página /products
+//É apenas os itens de demonstração
 const PRODUCTS: Product[] = [
   {
-    id: 1,
-    name: 'Vulcão de Chocolate Belga',
+    id: '1',
+    name: 'Vulcão de Chocolate Com Caramelo',
     description: 'Chocolate 70% cacau com recheio de ganache',
-    price: 89.90,
-    image: 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=800&q=80',
+    price: 60.00,
+    image: boloCaramelo,
   },
   {
-    id: 2,
-    name: 'Vulcão de Morango Fresco',
+    id: '2',
+    name: 'Vulcão Dois Amores',
     description: 'Com morangos selecionados e creme de baunilha',
-    price: 94.90,
-    image: 'https://images.unsplash.com/photo-1624353365286-3f8d62dadadf?auto=format&fit=crop&w=800&q=80',
+    price: 60.00,
+    image: boloPretoBranco,
   },
   {
-    id: 3,
-    name: 'Vulcão Red Velvet',
+    id: '3',
+    name: '?',
     description: 'Massa aveludada com cream cheese premium',
     price: 99.90,
     image: 'https://images.unsplash.com/photo-1574085733277-851d9d856a3a?auto=format&fit=crop&w=800&q=80',
   },
   {
-    id: 4,
-    name: 'Vulcão Doce de Leite',
+    id: '4',
+    name: '?',
     description: 'Com doce de leite argentino e nozes',
     price: 84.90,
     image: 'https://images.unsplash.com/photo-1626803775027-53b7958d43c4?auto=format&fit=crop&w=800&q=80',
   },
   {
-    id: 5,
-    name: 'Vulcão de Pistache',
+    id: '5',
+    name: '?',
     description: 'Creme de pistache com toque de baunilha',
     price: 109.90,
     image: 'https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&w=800&q=80',
@@ -42,6 +48,7 @@ const PRODUCTS: Product[] = [
 ];
 
 const ProductsSection = () => {
+  const navigate = useNavigate();
   const productsRef = useRef<HTMLElement | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const products = PRODUCTS;
@@ -84,7 +91,7 @@ const ProductsSection = () => {
   );
 
   return (
-    <section ref={productsRef} className="py-24 px-6 bg-gradient-to-b from-stone-50 to-white">
+    <section ref={productsRef} className="py-24 px-6 bg-linear-to-b from-stone-50 to-white">
       <div className="container mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl lg:text-6xl font-bold text-stone-900 mb-6">
@@ -96,21 +103,21 @@ const ProductsSection = () => {
         </div>
 
         <div className="mb-16">
-          <div className="h-[260px] sm:h-[320px] md:h-[420px] lg:h-[520px] relative touch-pan-y">
+          <div className="h-72 sm:h-90 md:h-115 lg:h-140 relative touch-pan-y">
             <CircularGallery
               items={galleryItems}
               bend={isMobile ? 0.6 : 0}
               borderRadius={0.08}
               scrollSpeed={isMobile ? 1.4 : 2}
               scrollEase={0.06}
-              textColor="#000000"
-              font={isMobile ? 'bold 20px Figtree' : 'bold 26px Figtree'}
+              textColor="#4e221a"
+              font={isMobile ? '800 28px Nunito Sans' : '800 24px Nunito Sans'}
             />
           </div>
         </div>
 
         <div className="text-center mt-16">
-          <button className="px-12 py-4 bg-white border-2 border-stone-300 text-stone-700 rounded-xl font-semibold hover:border-rose-400 hover:text-rose-700 transition-all duration-300 hover:shadow-lg cursor-pointer">
+          <button onClick={() => navigate('/products')} className="px-12 py-4 bg-white border-2 border-stone-300 text-stone-700 rounded-xl font-semibold hover:border-rose-400 hover:text-rose-700 transition-all duration-300 hover:shadow-lg cursor-pointer">
             Ver Todos os Produtos
           </button>
         </div>
