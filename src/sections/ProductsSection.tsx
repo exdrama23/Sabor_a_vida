@@ -87,7 +87,7 @@ const ProductsSection = () => {
   const galleryItems = useMemo(
     () =>
       products.map((product) => ({
-        image: product.image,
+        image:  (product.image),
         text: `${product.name} - R$ ${product.price}`,
       })),
     [products]

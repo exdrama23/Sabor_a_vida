@@ -16,6 +16,7 @@ import type {
   PaymentMethodData,
   CreditCardData 
 } from '../types';
+import { getProductImageUrl } from '../types';
 import api from '../axiosInstance';
 import { tokenizeCard } from '../lib/mercadopago';
 
@@ -1154,7 +1155,7 @@ Aguardando confirmação!
                           {cartItems.slice(0, 3).map((item) => (
                             <div key={item.id} className="flex items-center gap-3">
                               <img 
-                                src={item.image} 
+                                src={getProductImageUrl(item.id)} 
                                 alt={item.name}
                                 className="w-12 h-12 object-cover rounded-lg"
                               />

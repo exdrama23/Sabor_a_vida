@@ -6,6 +6,13 @@ export interface HeaderProps {
   cartItems?: CartItem[];
 }
 
+export const getProductImageUrl = (productId: string): string => {
+  const baseURL = window.location.hostname.includes('localhost') 
+    ? 'http://localhost:2923' 
+    : 'https://wealthy-courtney-sabor-a-vida-f6291b31.koyeb.app';
+  return `${baseURL}/api/product/image/${productId}`;
+};
+
 export interface Product {
   id: string;
   name: string;
@@ -13,7 +20,7 @@ export interface Product {
   category?: string;
   price: number;
   featured?: boolean;
-  size?: 'pequeno' | 'medio' | 'grande';
+  size?: 'PEQUENO' | 'MEDIO' | 'GRANDE';
   image: string;
 }
 
@@ -23,6 +30,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   image: string;
+  productId?: string; // original product id (useful when cart item id is composite)
   size?: string;
   flavor?: string;
   topping?: string;

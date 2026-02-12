@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import http from 'http';
 import path from 'path';
 import cors from 'cors';
+import fs from 'fs/promises';
 import prisma from './db';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
@@ -11,7 +12,6 @@ import { MercadoPagoConfig, Payment } from 'mercadopago';
 const JWT_SECRET = process.env.JWT_SECRET as string;
 const isProd = process.env.NODE_ENV === 'production';
 
-// Configurar Mercado Pago
 const mercadopagoAccessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN || 'TEST-8225018086266291-020819-cd2a293f4c9e16780ddc5034a732286e-246177773';
 const mercadopagoPublicKey = process.env.MERCADO_PAGO_PUBLIC_KEY || 'TEST-47faef05-fa43-43bb-b7e7-43501a862284';
 
@@ -50,6 +50,15 @@ if (isProd) app.use(express.static(path.join(frontend)));
 
 app.use('/api/uploads', express.static('uploads'));
 
+type ImageCacheEntry = {
+    buffer: Buffer;
+    contentType: string;
+    expiresAt: number;
+};
+
+const IMAGE_CACHE_TTL_MS = 1000 * 60 * 60;
+const imageCache = new Map<string, ImageCacheEntry>();
+
 function jwtValidate(req: Request & {admin?: object}, res: Response, next: NextFunction){
     const accessToken = req.headers.authorization?.split(' ')[1];
     if(!accessToken) return res.status(401).json({error: 'AccessToken deve ser fornecido.'});
@@ -84,6 +93,52 @@ router.post('/loginadmin', async(req, res)=>{
     }
 })
 
+router.get('/product/image/:id', async(req, res)=>{
+    try {
+        const id = req.params.id as string;
+
+        const cached = imageCache.get(id);
+        if (cached && Date.now() < cached.expiresAt) {
+            res.setHeader('Content-Type', cached.contentType);
+            res.setHeader('Content-Length', cached.buffer.length);
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+            return res.send(cached.buffer);
+        }
+
+        const product = await prisma.products.findUnique({ where: { id } });
+
+        if (!product || !product.image) {
+            return res.status(404).json({error: 'Imagem não encontrada'});
+        }
+
+
+        let imageBuffer: Buffer;
+        if (Buffer.isBuffer(product.image)) {
+            imageBuffer = product.image as Buffer;
+        } else if (typeof product.image === 'string') {
+            imageBuffer = Buffer.from(product.image, 'binary');
+        } else {
+            imageBuffer = Buffer.from(product.image as any);
+        }
+
+        const contentType = 'image/jpeg';
+
+        imageCache.set(id, {
+            buffer: imageBuffer,
+            contentType,
+            expiresAt: Date.now() + IMAGE_CACHE_TTL_MS
+        });
+
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Length', imageBuffer.length);
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.send(imageBuffer);
+    } catch (error) {
+        console.error('Erro ao buscar imagem:', error)
+        res.status(500).json({error: 'Erro ao buscar imagem.'})
+    }
+})
+
 router.get('/product', async(req, res)=>{
     try {
         const products = await prisma.products.findMany({
@@ -108,15 +163,53 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.post('/product', jwtValidate, upload.single('image_file'), async(req, res)=>{
-    try {
-        const {name, category, description, price, featured, image} = req.body;
+     try {
+        const {name, category, description, price, featured, size} = req.body;
+        
+        if (!name || !price || !size) {
+            return res.status(400).json({
+                error: 'Nome, preço e tamanho são obrigatórios.'
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                error: 'Imagem é obrigatória.'
+            });
+        }
+
+        const validSizes = ['PEQUENO', 'MEDIO', 'GRANDE'] as const;
+        const normalizedSize = String(size).toUpperCase();
+        
+        if (!normalizedSize || !validSizes.includes(normalizedSize as any)) {
+            return res.status(400).json({error: `Tamanho inválido. Use: ${validSizes.join(', ')}`});
+        }
+
+        const imagePath = req.file.path;
+        const imageBuffer = await fs.readFile(imagePath);
+        
         const newProduct = await prisma.products.create({
             data: {
-                name, category, description, price,
-                featured: featured==='true', image: req.file? `http://localhost:${port}/api/uploads/${req.file.filename}` : image
+                name, 
+                category, 
+                description, 
+                price: parseFloat(price),
+                size: normalizedSize as 'PEQUENO' | 'MEDIO' | 'GRANDE',
+                featured: featured === 'true' || featured === true,
+                image: imageBuffer
             },
             omit: {created_at: true, updated_at: true}
         });
+
+        try {
+            imageCache.set(newProduct.id, {
+                buffer: imageBuffer,
+                contentType: 'image/jpeg',
+                expiresAt: Date.now() + IMAGE_CACHE_TTL_MS
+            });
+        } catch (err) {
+            console.warn('Não foi possível armazenar imagem no cache:', err);
+        }
         res.status(201).json(newProduct);
     } catch (error) {
         console.error('Erro ao cadastrar produto:', error)
@@ -124,10 +217,55 @@ router.post('/product', jwtValidate, upload.single('image_file'), async(req, res
     }
 })
 
+router.put('/product/:id', jwtValidate, upload.single('image_file'), async (req, res) => {
+    try {
+        const id = req.params.id as string;
+        const { name, category, description, price, featured, size } = req.body;
+
+        const updateData: any = {};
+        if (typeof name !== 'undefined') updateData.name = name;
+        if (typeof category !== 'undefined') updateData.category = category;
+        if (typeof description !== 'undefined') updateData.description = description;
+        if (typeof price !== 'undefined' && price !== '') updateData.price = parseFloat(price);
+        if (typeof size !== 'undefined') updateData.size = size;
+        if (typeof featured !== 'undefined') updateData.featured = featured === 'true' || featured === true;
+
+        if (req.file) {
+            const imagePath = req.file.path;
+            const imageBuffer = await fs.readFile(imagePath);
+            updateData.image = imageBuffer;
+        }
+
+        const updated = await prisma.products.update({
+            where: { id },
+            data: updateData,
+            omit: { created_at: true, updated_at: true }
+        });
+
+        if (updateData.image) {
+            try {
+                imageCache.set(id, {
+                    buffer: updateData.image,
+                    contentType: 'image/jpeg',
+                    expiresAt: Date.now() + IMAGE_CACHE_TTL_MS
+                });
+            } catch (err) {
+                console.warn('Não foi possível atualizar cache de imagem:', err);
+            }
+        }
+
+        res.status(200).json(updated);
+    } catch (error) {
+        console.error('Erro ao atualizar produto:', error);
+        res.status(500).json({ error: 'Erro ao atualizar produto.' });
+    }
+});
+
 router.delete('/product/:id', jwtValidate, async(req, res)=>{
     try {
         const id = req.params.id as string;
         await prisma.products.delete({where: {id}});
+        try { imageCache.delete(id); } catch (err) {}
         res.status(200).json({message: 'Removido com sucesso.'});
     } catch (error) {
         console.error('Erro ao remover produto:', error)
@@ -135,7 +273,6 @@ router.delete('/product/:id', jwtValidate, async(req, res)=>{
     }
 })
 
-// Endpoint para pagamento com cartão de crédito
 router.post('/payment/card', async(req, res) => {
     try {
         const { 
@@ -148,12 +285,10 @@ router.post('/payment/card', async(req, res) => {
             payer
         } = req.body;
 
-        // Validar dados obrigatórios
         if (!amount || !token || !cardHolder || !payer) {
             return res.status(400).json({ error: 'Dados incompletos para o pagamento' });
         }
 
-        // Determinar o payment_method_id baseado no tipo de cartão
         let paymentMethodId = 'credit_card';
         if (cardType) {
             const cardTypeMap: Record<string, string> = {
@@ -171,7 +306,7 @@ router.post('/payment/card', async(req, res) => {
             payment_method_id: paymentMethodId,
             installments: parseInt(installments) || 1,
             description: description || 'Compra - Sabor à Vida',
-            token: token, // Token gerado no frontend
+            token: token,
             payer: {
                 email: payer.email,
                 first_name: payer.firstName,
@@ -214,7 +349,6 @@ router.post('/payment/card', async(req, res) => {
     }
 });
 
-// Endpoint para pagamento com Pix
 router.post('/payment/pix', async(req, res) => {
     try {
         const { 
@@ -251,7 +385,6 @@ router.post('/payment/pix', async(req, res) => {
         });
 
         if (paymentData && paymentData.id) {
-            // Extrair QR Code do Pix
             const pixQrCode = (paymentData as any).point_of_interaction?.qr_code?.qr_code || null;
             console.log('PIX payment successful:', paymentData.id);
 
@@ -280,7 +413,6 @@ router.post('/payment/pix', async(req, res) => {
     }
 });
 
-// Endpoint para obter token do cartão (front-end deve chamar)
 router.post('/payment/card-token', async(req, res) => {
     try {
         const { cardNumber, cardHolder, expirationMonth, expirationYear, securityCode } = req.body;
@@ -289,11 +421,8 @@ router.post('/payment/card-token', async(req, res) => {
             return res.status(400).json({ error: 'Dados incompletos do cartão' });
         }
 
-        // Remover espaços do número do cartão
         const cleanCardNumber = cardNumber.replace(/\s/g, '');
 
-        // Este endpoint é apenas informativo - a tokenização real deve ser feita no frontend
-        // usando a biblioteca JS do Mercado Pago
         res.status(200).json({
             message: 'Use a biblioteca JavaScript do Mercado Pago para tokenizar o cartão',
             publicKey: mercadopagoPublicKey
@@ -304,7 +433,6 @@ router.post('/payment/card-token', async(req, res) => {
     }
 });
 
-// Webhook para notificações do Mercado Pago
 router.post('/webhook/mercadopago', async(req, res) => {
     try {
         console.log('Webhook Mercado Pago:', req.body);

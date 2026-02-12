@@ -16,7 +16,23 @@ import api from './axiosInstance';
 function App() {
   const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const raw = localStorage.getItem('cart');
+      if (raw) return JSON.parse(raw) as CartItem[];
+      return [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('cart', JSON.stringify(cart));
+    } catch (err) {
+      console.warn('Não foi possível salvar carrinho no localStorage', err);
+    }
+  }, [cart]);
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
     try {
       return localStorage.getItem('isAdmin') === 'true';
@@ -25,32 +41,7 @@ function App() {
     }
   });
 
-  const initialProducts: Product[] = [
-    {
-      id: '1',
-      name: 'Vulcão de Chocolate Belga',
-      category: 'chocolate',
-      price: 89.9,
-      featured: true,
-      image: 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      id: '2',
-      name: 'Vulcão de Morango Fresco',
-      category: 'frutas',
-      price: 94.9,
-      featured: true,
-      image: 'https://images.unsplash.com/photo-1624353365286-3f8d62dadadf?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      id: '3',
-      name: 'Vulcão Red Velvet',
-      category: 'especiais',
-      price: 99.9,
-      featured: false,
-      image: 'https://images.unsplash.com/photo-1574085733277-851d9d856a3a?auto=format&fit=crop&w=800&q=80',
-    },
-  ];
+  
 
   const [jaBuscou, setJaBuscou] = useState(false);
 
@@ -74,7 +65,7 @@ function App() {
   }
   getProducts()
 
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

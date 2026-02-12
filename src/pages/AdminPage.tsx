@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Trash2 } from 'lucide-react';
+import { ChevronLeft, Trash2, Edit } from 'lucide-react';
 import HeaderFixo from '../components/HeaderFixo';
 import type { Product } from '../types';
+import { getProductImageUrl } from '../types';
 import api from '../axiosInstance';
 
 interface AdminPageProps {
@@ -18,10 +19,37 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
   const [price, setPrice] = useState('');
   const [image, setImage] = useState('');
   const [featured, setFeatured] = useState(false);
-  const [size, setSize] = useState<'pequeno' | 'medio' | 'grande'>('pequeno');
+  const [size, setSize] = useState<'PEQUENO' | 'MEDIO' | 'GRANDE'>('PEQUENO');
   const [description, setDescription] = useState('');
   const [message, setMessage] = useState('');
   const [imageFile, setImageFile] = useState<File>();
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setName('');
+    setCategory('chocolate');
+    setSize('PEQUENO');
+    setPrice('');
+    setImage('');
+    setImageFile(undefined);
+    setFeatured(false);
+    setDescription('');
+    setMessage('');
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditingId(product.id);
+    setName(product.name);
+    setCategory(product.category ?? 'chocolate');
+    setPrice(String(product.price));
+    setSize(product.size ?? 'PEQUENO');
+    setDescription(product.description ?? '');
+    setFeatured(!!product.featured);
+    setImage(getProductImageUrl(product.id));
+    setImageFile(undefined);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -50,35 +78,57 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
     formData.append('featured', featured?'true':'false');
     formData.append('size', size);
     if(description) formData.append('description', description);
-    if(imageFile) formData.append('image_file', imageFile);
-    else formData.append('image', image);
+
+    // For creation, allow image URL fallback; for editing, only send file if provided
+    if (imageFile) {
+      formData.append('image_file', imageFile);
+    } else if (!editingId && image) {
+      formData.append('image', image);
+    }
 
     try {
-      const response = await api.post('/product', formData) as {data: {
-        id: string;
-        name: string;
-        category: string;
-        description: string | null;
-        price: string;
-        featured: boolean;
-        image: string;
-        size?: 'pequeno' | 'medio' | 'grande';
-      }};
-      const {data} = response;
-      setProducts([ {...data, price: Number(data.price), description: data.description ?? '', size: data.size ?? size}, ...products]);
-      setMessage(' Produto adicionado com sucesso!');
+      if (editingId) {
+        const response = await api.put(`/product/${editingId}`, formData) as {data: {
+          id: string;
+          name: string;
+          category: string;
+          description: string | null;
+          price: string;
+          featured: boolean;
+          image: string;
+          size?: 'PEQUENO' | 'MEDIO' | 'GRANDE';
+        }};
+        const {data} = response;
+        setProducts(products.map(p => p.id === editingId ? {...data, price: Number(data.price), description: data.description ?? '', size: data.size ?? size} : p));
+        setMessage(' Produto atualizado com sucesso!');
+        resetForm();
+      } else {
+        const response = await api.post('/product', formData) as {data: {
+          id: string;
+          name: string;
+          category: string;
+          description: string | null;
+          price: string;
+          featured: boolean;
+          image: string;
+          size?: 'PEQUENO' | 'MEDIO' | 'GRANDE';
+        }};
+        const {data} = response;
+        setProducts([ {...data, price: Number(data.price), description: data.description ?? '', size: data.size ?? size}, ...products]);
+        setMessage(' Produto adicionado com sucesso!');
 
-      setName('');
-      setCategory('chocolate');
-      setSize('pequeno');
-      setPrice('');
-      setImage('');
-      setFeatured(false);
-      setDescription('');
+        setName('');
+        setCategory('chocolate');
+        setSize('PEQUENO');
+        setPrice('');
+        setImage('');
+        setFeatured(false);
+        setDescription('');
 
-      setTimeout(() => setMessage(''), 3000);
+        setTimeout(() => setMessage(''), 3000);
+      }
     } catch (err) {
-      console.error('Erro ao cadastrar produto:', err)
+      console.error('Erro ao cadastrar/atualizar produto:', err)
     }
   };
 
@@ -162,12 +212,12 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
                   <label className="block text-sm font-medium text-stone-600 mb-1">Tamanho</label>
                   <select
                     value={size}
-                    onChange={(e) => setSize(e.target.value as 'pequeno' | 'medio' | 'grande')}
+                    onChange={(e) => setSize(e.target.value as 'PEQUENO' | 'MEDIO' | 'GRANDE')}
                     className="w-full border border-stone-200 px-3 py-2 rounded-lg focus:outline-none focus:border-rose-500"
                   >
-                    <option value="pequeno">Pequeno</option>
-                    <option value="medio">Médio</option>
-                    <option value="grande">Grande</option>
+                    <option value="PEQUENO">Pequeno</option>
+                    <option value="MEDIO">Médio</option>
+                    <option value="GRANDE">Grande</option>
                   </select>
                 </div>
 
@@ -220,18 +270,29 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
                 </label>
 
                 <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/products')}
-                    className="flex-1 px-4 py-2 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors font-medium cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
+                  {editingId ? (
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      className="flex-1 px-4 py-2 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors font-medium cursor-pointer"
+                    >
+                      Cancelar edição
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/products')}
+                      className="flex-1 px-4 py-2 rounded-lg border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors font-medium cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  )}
+
                   <button
                     type="submit"
                     className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors font-medium"
                   >
-                    Adicionar
+                    {editingId ? 'Salvar alterações' : 'Adicionar'}
                   </button>
                 </div>
               </form>
@@ -252,7 +313,7 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
                       className="flex items-center gap-4 p-4 bg-stone-50 rounded-lg hover:bg-stone-100 transition-colors"
                     >
                       <img
-                        src={product.image}
+                        src={getProductImageUrl(product.id)}
                         alt={product.name}
                         className="w-16 h-16 object-cover rounded-lg"
                       />
@@ -271,12 +332,21 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
                           {product.featured && <span className="text-xs bg-rose-100 text-rose-600 px-2 py-1 rounded"> Destaque</span>}
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(product)}
+                          className="p-2 hover:bg-stone-100 text-stone-600 rounded-lg transition-colors"
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(product.id)}
+                          className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

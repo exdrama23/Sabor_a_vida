@@ -130,6 +130,20 @@ export type BoolFilter<$PrismaModel = never> = {
   not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
 }
 
+export type BytesFilter<$PrismaModel = never> = {
+  equals?: runtime.Bytes | Prisma.BytesFieldRefInput<$PrismaModel>
+  in?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
+  notIn?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBytesFilter<$PrismaModel> | runtime.Bytes
+}
+
+export type EnumProductSizeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ProductSize | Prisma.EnumProductSizeFieldRefInput<$PrismaModel>
+  in?: $Enums.ProductSize[] | Prisma.ListEnumProductSizeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ProductSize[] | Prisma.ListEnumProductSizeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumProductSizeFilter<$PrismaModel> | $Enums.ProductSize
+}
+
 export type SortOrderInput = {
   sort: Prisma.SortOrder
   nulls?: Prisma.NullsOrder
@@ -175,6 +189,26 @@ export type BoolWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedBoolFilter<$PrismaModel>
   _max?: Prisma.NestedBoolFilter<$PrismaModel>
+}
+
+export type BytesWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: runtime.Bytes | Prisma.BytesFieldRefInput<$PrismaModel>
+  in?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
+  notIn?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBytesWithAggregatesFilter<$PrismaModel> | runtime.Bytes
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedBytesFilter<$PrismaModel>
+  _max?: Prisma.NestedBytesFilter<$PrismaModel>
+}
+
+export type EnumProductSizeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ProductSize | Prisma.EnumProductSizeFieldRefInput<$PrismaModel>
+  in?: $Enums.ProductSize[] | Prisma.ListEnumProductSizeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ProductSize[] | Prisma.ListEnumProductSizeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumProductSizeWithAggregatesFilter<$PrismaModel> | $Enums.ProductSize
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumProductSizeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumProductSizeFilter<$PrismaModel>
 }
 
 export type NestedUuidFilter<$PrismaModel = never> = {
@@ -299,6 +333,20 @@ export type NestedBoolFilter<$PrismaModel = never> = {
   not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
 }
 
+export type NestedBytesFilter<$PrismaModel = never> = {
+  equals?: runtime.Bytes | Prisma.BytesFieldRefInput<$PrismaModel>
+  in?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
+  notIn?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBytesFilter<$PrismaModel> | runtime.Bytes
+}
+
+export type NestedEnumProductSizeFilter<$PrismaModel = never> = {
+  equals?: $Enums.ProductSize | Prisma.EnumProductSizeFieldRefInput<$PrismaModel>
+  in?: $Enums.ProductSize[] | Prisma.ListEnumProductSizeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ProductSize[] | Prisma.ListEnumProductSizeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumProductSizeFilter<$PrismaModel> | $Enums.ProductSize
+}
+
 export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
@@ -349,6 +397,26 @@ export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedBoolFilter<$PrismaModel>
   _max?: Prisma.NestedBoolFilter<$PrismaModel>
+}
+
+export type NestedBytesWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: runtime.Bytes | Prisma.BytesFieldRefInput<$PrismaModel>
+  in?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
+  notIn?: runtime.Bytes[] | Prisma.ListBytesFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBytesWithAggregatesFilter<$PrismaModel> | runtime.Bytes
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedBytesFilter<$PrismaModel>
+  _max?: Prisma.NestedBytesFilter<$PrismaModel>
+}
+
+export type NestedEnumProductSizeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.ProductSize | Prisma.EnumProductSizeFieldRefInput<$PrismaModel>
+  in?: $Enums.ProductSize[] | Prisma.ListEnumProductSizeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.ProductSize[] | Prisma.ListEnumProductSizeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumProductSizeWithAggregatesFilter<$PrismaModel> | $Enums.ProductSize
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumProductSizeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumProductSizeFilter<$PrismaModel>
 }
 
 

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react'; 
 import HeaderFixo from '../components/HeaderFixo';
 import CheckoutModal from './CheckoutModal'; 
-import type { CartItem, CheckoutFormData } from '../types'; 
+import type { CartItem, CheckoutFormData } from '../types';
+import { getProductImageUrl } from '../types'; 
 
 interface CartPageProps {
   cartItems: CartItem[];
@@ -41,7 +42,7 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
           description: `${item.size || ''} ${item.flavor || ''}`.trim(),
           quantity: item.quantity,
           unit_price: item.price,
-          picture_url: item.image,
+          picture_url: getProductImageUrl(item.productId || item.id),
         })),
         payer: {
           name: checkoutData.etapa1.nomeCompleto,
@@ -146,7 +147,7 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
                   className="flex gap-4 bg-white border border-stone-200 rounded-2xl p-6 hover:shadow-md transition-shadow"
                 >
                   <img
-                    src={item.image}
+                    src={getProductImageUrl(item.productId || item.id)}
                     alt={item.name}
                     className="w-32 h-32 object-cover rounded-lg shrink-0"
                   />

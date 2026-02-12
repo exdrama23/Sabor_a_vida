@@ -2,8 +2,9 @@ import { ShoppingCart, Minus, Plus, X, Filter, ChevronDown } from 'lucide-react'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CartItem, Product } from '../types';
+import { getProductImageUrl } from '../types';
 
-type Size = 'pequeno' | 'medio' | 'grande';
+type Size = 'PEQUENO' | 'MEDIO' | 'GRANDE';
 
 interface ProductsPageProps {
   cart: CartItem[];
@@ -22,6 +23,7 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
   const [quantity, setQuantity] = useState(1);
   const [showCartAdded, setShowCartAdded] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [productSizes, setProductSizes] = useState<Record<string, Size>>({});
 
   const categories = [
     { id: 'todos', name: 'Todos' },
@@ -54,12 +56,17 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
   ];
 
   const sizeOptions: Array<{ id: Size; label: string; desc: string }> = [
-    { id: 'pequeno', label: 'Pequeno', desc: '4-6 porções' },
-    { id: 'medio', label: 'Médio', desc: '8-10 porções' },
-    { id: 'grande', label: 'Grande', desc: '12-14 porções' },
+    { id: 'PEQUENO', label: 'Pequeno', desc: '4-6 porções' },
+    { id: 'MEDIO', label: 'Médio', desc: '8-10 porções' },
+    { id: 'GRANDE', label: 'Grande', desc: '12-14 porções' },
   ];
 
-  // Salvar tamanho selecionado no localStorage
+  const sizePrices: Record<Size, number> = {
+    PEQUENO: 12,
+    MEDIO: 35,
+    GRANDE: 60,
+  };
+
   useEffect(() => {
     if (selectedSize) {
       localStorage.setItem('boloTamanhoSelecionado', selectedSize);
@@ -71,16 +78,14 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
       return 0;
     }
     
-    // Preços fixos para bolos personalizados por tamanho
     const sizePrices = {
-      pequeno: 12,
-      medio: 35,
-      grande: 60,
+      PEQUENO: 12,
+      MEDIO: 35,
+      GRANDE: 60,
     };
     
     let price = sizePrices[selectedSize as Size];
     
-    // Adicionar R$ 2 se cobertura extra foi selecionada
     if (selectedExtras.includes('extra')) {
       price += 2;
     }
@@ -93,13 +98,14 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
       ? products
       : products.filter((product) => product.category === selectedCategory);
 
-  const addToCart = (product: Product, isCustomized: boolean = false) => {
+  const addToCart = (product: Product, isCustomized: boolean = false, defaultSize?: Size) => {
     let newCartItem: CartItem;
     
     if (isCustomized && customizingProduct && selectedSize) {
       const pricePerUnit = calculatePrice(true);
       newCartItem = {
         id: `${product.id}-${selectedSize}-${selectedFlavor}-${selectedTopping}`,
+        productId: product.id,
         name: customizingProduct.name,
         price: pricePerUnit,
         quantity: quantity,
@@ -110,13 +116,15 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
         extras: selectedExtras.filter(e => e !== 'nenhum'),
       };
     } else {
+      const priceForSize = defaultSize ? sizePrices[defaultSize] : product.price;
       newCartItem = {
-        id: product.id,
+        id: defaultSize ? `${product.id}-${defaultSize}` : product.id,
+        productId: product.id,
         name: product.name,
-        price: product.price,
+        price: priceForSize,
         quantity: 1,
         image: product.image,
-        size: undefined,
+        size: defaultSize,
         flavor: undefined,
         topping: undefined,
         extras: [],
@@ -283,11 +291,11 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="group relative bg-white rounded-xl md:rounded-2xl overflow-hidden hover:shadow-lg md:hover:shadow-xl transition-all duration-300 border border-stone-100"
+                className="group relative bg-white rounded-xl md:rounded-2xl overflow-hidden hover:shadow-lg md:hover:shadow-xl transition-all duration-300 border border-stone-100 flex flex-col"
               >
                 <div className="aspect-square overflow-hidden">
                   <img
-                    src={product.image}
+                    src={getProductImageUrl(product.id)}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
@@ -297,23 +305,43 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                     </div>
                   )}
                 </div>
-                <div className="p-4 md:p-5">
+                <div className="p-4 md:p-5 flex flex-col flex-1">
                   <h3 className="text-base md:text-lg font-normal text-stone-800 mb-2 md:mb-3 line-clamp-2 min-h-[3.5rem]">
                     {product.name}
                   </h3>
-                  <div className="flex items-center justify-between">
+                  
+                  {product.description && (
+                    <p className="text-xs md:text-sm text-stone-600 mb-3 md:mb-4 line-clamp-2 flex-grow">
+                      {product.description}
+                    </p>
+                  )}
+                  
+                  <div className="space-y-3">
                     <div>
-                      <span className="text-xl md:text-2xl font-light text-rose-600">
-                        R$ {formatPrice(product.price)}
-                      </span>
+                      <label className="block text-xs font-medium text-stone-600 mb-1">Tamanho</label>
+                      <select
+                        value={productSizes[product.id] || 'PEQUENO'}
+                        onChange={(e) => setProductSizes({...productSizes, [product.id]: e.target.value as Size})}
+                        className="w-full border border-stone-200 px-2 py-2 rounded-lg text-sm focus:outline-none focus:border-rose-500 bg-white"
+                      >
+                        <option value="PEQUENO">Pequeno</option>
+                        <option value="MEDIO">Médio</option>
+                        <option value="GRANDE">Grande</option>
+                      </select>
                     </div>
-                    <button
-                      onClick={() => addToCart(product)}
-                      className="w-12 h-12 md:w-12 md:h-12 bg-stone-800 text-white rounded-lg flex items-center justify-center hover:bg-stone-700 transition-colors cursor-pointer active:scale-95"
-                      aria-label={`Adicionar ${product.name} ao carrinho`}
-                    >
-                      <ShoppingCart className="w-5 h-5 md:w-5 md:h-5" />
-                    </button>
+                    
+                    <div className="flex items-center justify-between pt-2 border-t border-stone-100">
+                      <span className="text-lg md:text-xl font-light text-rose-600">
+                        R$ {formatPrice(sizePrices[productSizes[product.id] || 'PEQUENO'])}
+                      </span>
+                      <button
+                        onClick={() => addToCart(product, false, productSizes[product.id] || 'PEQUENO')}
+                        className="w-10 h-10 md:w-10 md:h-10 bg-stone-800 text-white rounded-lg flex items-center justify-center hover:bg-stone-700 transition-colors cursor-pointer active:scale-95"
+                        aria-label={`Adicionar ${product.name} ao carrinho`}
+                      >
+                        <ShoppingCart className="w-5 h-5 md:w-5 md:h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -351,7 +379,7 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
             <div className="p-4 md:p-6">
               <div className="mb-6 md:mb-8">
                 <img
-                  src={customizingProduct.image}
+                  src={getProductImageUrl(customizingProduct.id)}
                   alt={customizingProduct.name}
                   className="w-full h-48 md:h-72 object-cover rounded-lg md:rounded-xl"
                 />
