@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Trash2, Edit } from 'lucide-react';
 import HeaderFixo from '../components/HeaderFixo';
@@ -19,7 +19,9 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
   const [price, setPrice] = useState('');
   const [image, setImage] = useState('');
   const [featured, setFeatured] = useState(false);
-  const [size, setSize] = useState<'PEQUENO' | 'MEDIO' | 'GRANDE'>('PEQUENO');
+  const [size, setSize] = useState<'PEQUENO' | 'MEDIO' | 'GRANDE' | ''>('');
+  const [payments, setPayments] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [description, setDescription] = useState('');
   const [message, setMessage] = useState('');
   const [imageFile, setImageFile] = useState<File>();
@@ -29,7 +31,7 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
     setEditingId(null);
     setName('');
     setCategory('chocolate');
-    setSize('PEQUENO');
+    setSize('');
     setPrice('');
     setImage('');
     setImageFile(undefined);
@@ -43,7 +45,7 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
     setName(product.name);
     setCategory(product.category ?? 'chocolate');
     setPrice(String(product.price));
-    setSize(product.size ?? 'PEQUENO');
+    setSize(product.size ?? '');
     setDescription(product.description ?? '');
     setFeatured(!!product.featured);
     setImage(getProductImageUrl(product.id));
@@ -76,7 +78,7 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
     formData.append('category', category);
     formData.append('price', price);
     formData.append('featured', featured?'true':'false');
-    formData.append('size', size);
+    if (size) formData.append('size', size);
     if(description) formData.append('description', description);
 
     // For creation, allow image URL fallback; for editing, only send file if provided
@@ -99,7 +101,7 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
           size?: 'PEQUENO' | 'MEDIO' | 'GRANDE';
         }};
         const {data} = response;
-        setProducts(products.map(p => p.id === editingId ? {...data, price: Number(data.price), description: data.description ?? '', size: data.size ?? size} : p));
+        setProducts(products.map(p => p.id === editingId ? {...data, price: Number(data.price), description: data.description ?? '', size: (data.size ?? size) || undefined} : p));
         setMessage(' Produto atualizado com sucesso!');
         resetForm();
       } else {
@@ -114,12 +116,12 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
           size?: 'PEQUENO' | 'MEDIO' | 'GRANDE';
         }};
         const {data} = response;
-        setProducts([ {...data, price: Number(data.price), description: data.description ?? '', size: data.size ?? size}, ...products]);
+        setProducts([ {...data, price: Number(data.price), description: data.description ?? '', size: (data.size ?? size) || undefined}, ...products]);
         setMessage(' Produto adicionado com sucesso!');
 
         setName('');
         setCategory('chocolate');
-        setSize('PEQUENO');
+        setSize('');
         setPrice('');
         setImage('');
         setFeatured(false);
@@ -143,6 +145,26 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
     }
   };
 
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const paymentsRes = await api.get('/payments');
+        setPayments(paymentsRes.data || []);
+      } catch (err) {
+        console.debug('Não foi possível carregar payments:', err);
+      }
+
+      try {
+        const ordersRes = await api.get('/orders');
+        setOrders(ordersRes.data || []);
+      } catch (err) {
+        console.debug('Não foi possível carregar orders:', err);
+      }
+    };
+
+    fetchLogs();
+  }, []);
+
   return (
     <>
       <HeaderFixo />
@@ -156,10 +178,21 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
           Voltar
         </button>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1">
+            <div className="bg-white p-6 rounded-2xl border border-stone-200 sticky top-24">
+              <h2 className="text-lg font-semibold mb-4">Painel</h2>
+              <nav className="text-sm text-stone-600 space-y-2">
+                <div className="py-2 px-3 rounded hover:bg-stone-50 cursor-pointer">Produtos</div>
+                <div className="py-2 px-3 rounded hover:bg-stone-50 cursor-pointer">Pagamentos</div>
+                <div className="py-2 px-3 rounded hover:bg-stone-50 cursor-pointer">Pedidos</div>
+              </nav>
+            </div>
+          </div>
+
+          <div className="lg:col-span-2">
             <div className="bg-white p-6 rounded-2xl border border-stone-200">
-              <h1 className="text-2xl font-semibold mb-6 text-stone-800">Adicionar Produto</h1>
+              <h1 className="text-2xl font-semibold mb-6 text-stone-800 cursor-pointer">Adicionar Produto</h1>
               
               {message && (
                 <div className="mb-4 p-3 rounded-lg bg-stone-100 text-sm text-stone-700">
@@ -212,9 +245,10 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
                   <label className="block text-sm font-medium text-stone-600 mb-1">Tamanho</label>
                   <select
                     value={size}
-                    onChange={(e) => setSize(e.target.value as 'PEQUENO' | 'MEDIO' | 'GRANDE')}
+                    onChange={(e) => setSize(e.target.value as 'PEQUENO' | 'MEDIO' | 'GRANDE' | '')}
                     className="w-full border border-stone-200 px-3 py-2 rounded-lg focus:outline-none focus:border-rose-500"
                   >
+                    <option value="">Selecione o tamanho</option>
                     <option value="PEQUENO">Pequeno</option>
                     <option value="MEDIO">Médio</option>
                     <option value="GRANDE">Grande</option>
@@ -299,14 +333,14 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
             </div>
           </div>
 
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1">
             <div className="bg-white p-6 rounded-2xl border border-stone-200">
               <h2 className="text-2xl font-semibold mb-6 text-stone-800">Produtos ({products.length})</h2>
 
               {products.length === 0 ? (
                 <p className="text-center text-stone-500 py-8">Nenhum produto adicionado ainda</p>
               ) : (
-                <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                <div className="space-y-3 max-h-150 overflow-y-auto">
                   {products.map((product) => (
                     <div
                       key={product.id}
@@ -351,6 +385,51 @@ const AdminPage = ({ products, setProducts }: AdminPageProps) => {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+
+          <div className="lg:col-span-1">
+            <div className="bg-white p-6 rounded-2xl border border-stone-200 max-h-[70vh] overflow-y-auto">
+              <h2 className="text-2xl font-semibold mb-4 text-stone-800">Logs de Pagamento</h2>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-stone-700 mb-2">Últimos Payments</h3>
+                  {payments.length === 0 ? (
+                    <p className="text-sm text-stone-500">Nenhum payment encontrado</p>
+                  ) : (
+                    <ul className="text-sm text-stone-600 space-y-2">
+                      {payments.slice(0,6).map((p) => (
+                        <li key={p.id || p._id} className="p-2 border rounded bg-stone-50">
+                          <div className="flex items-center justify-between">
+                            <div className="truncate">{p.externalReference || p.id || '—'}</div>
+                            <div className="text-rose-600 font-medium">R$ {p.amount ? Number(p.amount).toFixed(2).replace('.', ',') : '0,00'}</div>
+                          </div>
+                          <div className="text-xs text-stone-500">{p.status || p.state || '—'}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-stone-700 mb-2">Últimos Orders</h3>
+                  {orders.length === 0 ? (
+                    <p className="text-sm text-stone-500">Nenhum order encontrado</p>
+                  ) : (
+                    <ul className="text-sm text-stone-600 space-y-2">
+                      {orders.slice(0,6).map((o) => (
+                        <li key={o.id || o._id} className="p-2 border rounded bg-stone-50">
+                          <div className="flex items-center justify-between">
+                            <div className="truncate">{o.externalReference || o.id || '—'}</div>
+                            <div className="text-rose-600 font-medium">R$ {o.totalPrice ? Number(o.totalPrice).toFixed(2).replace('.', ',') : (o.amount ? Number(o.amount).toFixed(2).replace('.', ',') : '0,00')}</div>
+                          </div>
+                          <div className="text-xs text-stone-500">{o.status || '—'}</div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

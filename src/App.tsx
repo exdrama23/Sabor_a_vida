@@ -8,10 +8,13 @@ import AppLayout from './AppLayout';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
 import CartPage from './pages/CartPage';
-import AdminPage from './pages/AdminPage';
+import AdminLayout from './pages/Admin/AdminLayout';
 import AdminLogin from './components/AdminLogin';
 import AboutPage from './pages/AboutPage';
 import api from './axiosInstance';
+import AdicionarBolo from './pages/Admin/AdicionarBolo';
+import Logs from './pages/Admin/Logs';
+import ListaBolos from './pages/Admin/ListaBolos';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -41,15 +44,15 @@ function App() {
     }
   });
 
-  
-
   const [jaBuscou, setJaBuscou] = useState(false);
+
+  const [products, setProducts] = useState<Product[]>([]);
 
   async function getProducts(){
     if(jaBuscou) return;
     setJaBuscou(true);
     try {
-      const response = await api('/product') as {data: {
+      const response = await api.get('/product') as {data: {
         id: string;
         name: string;
         category: string;
@@ -63,9 +66,10 @@ function App() {
       console.error('Erro ao buscar produtos:', err)
     }
   }
-  getProducts()
 
-  const [products, setProducts] = useState<Product[]>([]);
+  useEffect(() => {
+    getProducts();
+  }, [jaBuscou]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -95,12 +99,15 @@ function App() {
             path="/admin"
             element={
               isAdmin ? (
-                <AdminPage products={products} setProducts={setProducts} />
+                <AdminLayout />
               ) : (
                 <AdminLogin setIsAdmin={setIsAdmin} />
               )
             }
           />
+          <Route path="bolos/adicionar" element={<AdicionarBolo />} />
+          <Route path="bolos/lista" element={<ListaBolos />} />
+          <Route path="logs" element={<Logs />} />
           <Route path="/about" element={<AboutPage />} />
         </Route>
       </Routes>

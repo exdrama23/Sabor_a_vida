@@ -6,7 +6,9 @@ import {
   CreditCard, 
   CheckCircle,
   ChevronRight,
-  Loader2
+  Loader2,
+  Copy,
+  Check
 } from 'lucide-react';
 import type { 
   CheckoutModalProps, 
@@ -68,6 +70,8 @@ const CheckoutModal = ({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [pixData, setPixData] = useState<any>(null);
+  const [copiedToClipboard, setCopiedToClipboard] = useState(false);
 
   const isMobile = () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -285,6 +289,18 @@ Aguardando confirmação!
     }
   };
 
+  const copyPixCodeToClipboard = async () => {
+    if (pixData?.qrCode) {
+      try {
+        await navigator.clipboard.writeText(pixData.qrCode);
+        setCopiedToClipboard(true);
+        setTimeout(() => setCopiedToClipboard(false), 2000);
+      } catch (err) {
+        console.error('Erro ao copiar:', err);
+      }
+    }
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setPaymentError(null);
@@ -312,7 +328,34 @@ Aguardando confirmação!
             lastName: customerData.nomeCompleto.split(' ').slice(1).join(' '),
             cpf: customerData.cpf
           },
-          externalReference: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          externalReference: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          orderData: {
+            customerName: customerData.nomeCompleto,
+            customerEmail: customerData.email,
+            customerPhone: customerData.telefone,
+            customerCpf: customerData.cpf,
+            addressStreet: addressData.rua,
+            addressNumber: addressData.numero,
+            addressComplement: addressData.complemento,
+            addressNeighborhood: addressData.bairro,
+            addressCity: addressData.cidade,
+            addressState: addressData.estado,
+            addressZip: addressData.cep,
+            addressReference: addressData.pontoReferencia,
+            addressType: addressData.tipoEndereco,
+            deliveryNotes: addressData.observacoes,
+            items: cartItems.map(item => ({
+              productId: item.id,
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+              size: item.size
+            })),
+            cakeSize: localStorage.getItem('boloTamanhoSelecionado') || '',
+            subtotal,
+            deliveryPrice: delivery,
+            totalPrice: total
+          }
         };
 
         const pixResponse = await api.post('/payment/pix', pixPaymentData);
@@ -320,11 +363,10 @@ Aguardando confirmação!
         if (pixResponse.data.success) {
           console.log('Pix gerado com sucesso:', pixResponse.data);
           
+          // Salvar dados do PIX e ir para tela de QR code
+          setPixData(pixResponse.data);
+          setCurrentStep(5);
           onConfirmPayment(formData);
-          
-          setTimeout(() => {
-            onClose();
-          }, 1500);
         } else {
           throw new Error(pixResponse.data.error || 'Erro ao gerar Pix');
         }
@@ -356,6 +398,33 @@ Aguardando confirmação!
               firstName: customerData.nomeCompleto.split(' ')[0],
               lastName: customerData.nomeCompleto.split(' ').slice(1).join(' '),
               cpf: customerData.cpf
+            },
+            orderData: {
+              customerName: customerData.nomeCompleto,
+              customerEmail: customerData.email,
+              customerPhone: customerData.telefone,
+              customerCpf: customerData.cpf,
+              addressStreet: addressData.rua,
+              addressNumber: addressData.numero,
+              addressComplement: addressData.complemento,
+              addressNeighborhood: addressData.bairro,
+              addressCity: addressData.cidade,
+              addressState: addressData.estado,
+              addressZip: addressData.cep,
+              addressReference: addressData.pontoReferencia,
+              addressType: addressData.tipoEndereco,
+              deliveryNotes: addressData.observacoes,
+              items: cartItems.map(item => ({
+                productId: item.id,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                size: item.size
+              })),
+              cakeSize: localStorage.getItem('boloTamanhoSelecionado') || '',
+              subtotal,
+              deliveryPrice: delivery,
+              totalPrice: total
             }
           };
 
@@ -504,8 +573,9 @@ Aguardando confirmação!
                   { number: 1, label: 'Dados', icon: User },
                   { number: 2, label: 'Endereço', icon: MapPin },
                   { number: 3, label: 'Pagamento', icon: CreditCard },
-                  { number: 4, label: 'Confirmação', icon: CheckCircle }
-                ].map((step, index) => (
+                  { number: 4, label: 'Confirmação', icon: CheckCircle },
+                  ...(pixData ? [{ number: 5, label: 'QR Code', icon: CheckCircle }] : [])
+                ].map((step, index, array) => (
                   <div key={step.number} className="flex items-center">
                     <div className="flex flex-col items-center">
                       <div className={`
@@ -523,7 +593,7 @@ Aguardando confirmação!
                       </span>
                     </div>
                     
-                    {index < 3 && (
+                    {index < array.length - 1 && (
                       <div className={`
                         w-16 h-1 mx-4
                         ${currentStep > step.number 
@@ -1248,15 +1318,129 @@ Aguardando confirmação!
                 </div>
               </div>
             )}
+
+            {currentStep === 5 && pixData && (
+              <div className="space-y-8">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CreditCard className="w-8 h-8 text-rose-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-stone-900">Pagamento via Pix</h3>
+                  <p className="text-stone-600 mt-2">
+                    Escaneie o QR Code abaixo ou copie o código para pagar
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-center gap-8 px-4 py-6">
+                  {/* QR Code */}
+                  <div className="bg-white p-8 rounded-2xl shadow-lg border-2 border-stone-200">
+                    <div className="w-80 h-80 bg-stone-100 rounded-lg flex items-center justify-center">
+                      {pixData.qrCodeBase64 ? (
+  <img
+    src={`data:image/png;base64,${pixData.qrCodeBase64}`}
+    alt="PIX QR Code"
+    className="max-w-full max-h-full object-contain"
+  />
+) : (
+  <div className="text-center">
+    <p className="text-stone-500">QR Code indisponível</p>
+  </div>
+)}
+                    </div>
+                  </div>
+
+                  {/* Código PIX para copiar */}
+                  <div className="w-full max-w-2xl">
+                    <div className="bg-stone-50 rounded-xl p-6 space-y-4">
+                      <div>
+                        <h4 className="font-medium text-stone-900 mb-3">Copie o código PIX:</h4>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={pixData.qrCode || ''}
+                            readOnly
+                            className="flex-1 p-3 border border-stone-300 rounded-lg bg-white text-xs font-mono break-all"
+                          />
+                          <button
+                            onClick={copyPixCodeToClipboard}
+                            className={`px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                              copiedToClipboard
+                                ? 'bg-green-600 text-white'
+                                : 'bg-rose-600 text-white hover:bg-rose-700'
+                            }`}
+                          >
+                            {copiedToClipboard ? (
+                              <>
+                                <Check className="w-4 h-4" />
+                                Copiado
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-4 h-4" />
+                                Copiar
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-stone-200 pt-4">
+                        <p className="text-sm text-stone-700">
+                          <strong>Valor:</strong> R$ {total.toFixed(2).replace('.', ',')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Instruções */}
+                  <div className="w-full max-w-2xl bg-rose-50 border border-rose-200 rounded-xl p-6">
+                    <h4 className="font-bold text-rose-900 mb-4">Como pagar:</h4>
+                    <ol className="text-sm text-rose-800 space-y-3">
+                      <li className="flex gap-3">
+                        <span className="font-bold min-w-6">1</span>
+                        <span>Abra seu aplicativo de banco ou carteira digital</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="font-bold min-w-6">2</span>
+                        <span>Toque em "Pagar" ou "Transferência Pix"</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="font-bold min-w-6">3</span>
+                        <span>Escolha "QR Code" e escaneie a imagem acima</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="font-bold min-w-6">Ou</span>
+                        <span>Copie o código e cole na sua instituição</span>
+                      </li>
+                      <li className="flex gap-3">
+                        <span className="font-bold min-w-6">4</span>
+                        <span>Confirme os dados e finalize o pagamento</span>
+                      </li>
+                    </ol>
+                  </div>
+
+                  <div className="text-center text-sm text-stone-500 max-w-2xl">
+                    <p>Você será notificado automaticamente quando o pagamento for confirmado.</p>
+                    <p className="mt-2">A confirmação pode levar até alguns minutos.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="sticky bottom-0 bg-white border-t border-stone-200 p-6">
             <div className="flex items-center justify-between">
               <button
-                onClick={currentStep === 1 ? onClose : handlePreviousStep}
+                onClick={
+                  currentStep === 1 
+                    ? onClose 
+                    : currentStep === 5
+                    ? () => { setPixData(null); onClose(); }
+                    : handlePreviousStep
+                }
                 className="px-6 py-3 border border-stone-300 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors cursor-pointer"
               >
-                {currentStep === 1 ? 'Cancelar' : 'Voltar'}
+                {currentStep === 1 ? 'Cancelar' : currentStep === 5 ? 'Fechar' : 'Voltar'}
               </button>
 
               <div className="flex items-center gap-4">
@@ -1268,7 +1452,7 @@ Aguardando confirmação!
                     Próxima Etapa
                     <ChevronRight className="w-4 h-4" />
                   </button>
-                ) : (
+                ) : currentStep === 5 ? null : (
                   <button
                     onClick={handleSubmit}
                     disabled={isSubmitting}

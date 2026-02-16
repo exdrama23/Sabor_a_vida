@@ -52,7 +52,9 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   admins: 'admins',
-  products: 'products'
+  products: 'products',
+  orders: 'orders',
+  payments: 'payments'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -86,16 +88,67 @@ export const ProductsScalarFieldEnum = {
   id: 'id',
   name: 'name',
   category: 'category',
-  description: 'description',
   price: 'price',
   featured: 'featured',
-  image: 'image',
+  created_at: 'created_at',
+  updated_at: 'updated_at',
+  description: 'description',
   size: 'size',
+  image: 'image'
+} as const
+
+export type ProductsScalarFieldEnum = (typeof ProductsScalarFieldEnum)[keyof typeof ProductsScalarFieldEnum]
+
+
+export const OrdersScalarFieldEnum = {
+  id: 'id',
+  externalReference: 'externalReference',
+  customerName: 'customerName',
+  customerEmail: 'customerEmail',
+  customerPhone: 'customerPhone',
+  customerCpf: 'customerCpf',
+  addressStreet: 'addressStreet',
+  addressNumber: 'addressNumber',
+  addressComplement: 'addressComplement',
+  addressNeighborhood: 'addressNeighborhood',
+  addressCity: 'addressCity',
+  addressState: 'addressState',
+  addressZip: 'addressZip',
+  addressReference: 'addressReference',
+  addressType: 'addressType',
+  deliveryNotes: 'deliveryNotes',
+  items: 'items',
+  cakeSize: 'cakeSize',
+  subtotal: 'subtotal',
+  deliveryPrice: 'deliveryPrice',
+  totalPrice: 'totalPrice',
+  paymentMethod: 'paymentMethod',
+  paymentStatus: 'paymentStatus',
+  mercadoPagoPaymentId: 'mercadoPagoPaymentId',
+  cardLastFour: 'cardLastFour',
+  installments: 'installments',
+  created_at: 'created_at',
+  updated_at: 'updated_at',
+  whatsappSentAt: 'whatsappSentAt'
+} as const
+
+export type OrdersScalarFieldEnum = (typeof OrdersScalarFieldEnum)[keyof typeof OrdersScalarFieldEnum]
+
+
+export const PaymentsScalarFieldEnum = {
+  id: 'id',
+  orderExternalRef: 'orderExternalRef',
+  mercadoPagoId: 'mercadoPagoId',
+  status: 'status',
+  statusDetail: 'statusDetail',
+  transactionAmount: 'transactionAmount',
+  paymentMethodId: 'paymentMethodId',
+  webhookData: 'webhookData',
   created_at: 'created_at',
   updated_at: 'updated_at'
 } as const
 
-export type ProductsScalarFieldEnum = (typeof ProductsScalarFieldEnum)[keyof typeof ProductsScalarFieldEnum]
+export type PaymentsScalarFieldEnum = (typeof PaymentsScalarFieldEnum)[keyof typeof PaymentsScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -104,6 +157,21 @@ export const SortOrder = {
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {
@@ -120,4 +188,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

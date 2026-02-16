@@ -100,9 +100,13 @@ const ProductsSection = () => {
           <h2 className="text-4xl lg:text-6xl font-bold text-stone-900 mb-6">
             Nossas <span className="text-rose-600">Criações</span>
           </h2>
+          <h3 className="text-stone-600 text-lg max-w-2xl mx-auto">
+            bolo pequeno 12R$ | bolo médio 35R$ | bolo grande 60R$ 
+          </h3>
           <p className="text-stone-600 text-lg max-w-2xl mx-auto">
             Cada bolo é uma obra de arte, feita com ingredientes selecionados e muita técnica.
           </p>
+          
         </div>
 
         <div className="mb-16">

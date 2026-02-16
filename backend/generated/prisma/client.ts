@@ -47,3 +47,13 @@ export type admins = Prisma.adminsModel
  * 
  */
 export type products = Prisma.productsModel
+/**
+ * Model orders
+ * 
+ */
+export type orders = Prisma.ordersModel
+/**
+ * Model payments
+ * 
+ */
+export type payments = Prisma.paymentsModel

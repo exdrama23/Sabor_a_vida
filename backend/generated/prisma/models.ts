@@ -10,4 +10,6 @@
  */
 export type * from './models/admins'
 export type * from './models/products'
+export type * from './models/orders'
+export type * from './models/payments'
 export type * from './commonInputTypes'

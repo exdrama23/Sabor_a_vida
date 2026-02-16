@@ -23,7 +23,7 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
   const [quantity, setQuantity] = useState(1);
   const [showCartAdded, setShowCartAdded] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [productSizes, setProductSizes] = useState<Record<string, Size>>({});
+  const [productSizes, setProductSizes] = useState<Record<string, Size | ''>>({});
 
   const categories = [
     { id: 'todos', name: 'Todos' },
@@ -74,22 +74,25 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
   }, [selectedSize]);
 
   const calculatePrice = (isCustomized: boolean = false) => {
-    if (!isCustomized || !selectedSize) {
-      return 0;
+    if (!isCustomized) return 0;
+
+    // If admin set a fixed price on the product, use it (ignore size prices)
+    if (customizingProduct && customizingProduct.price && customizingProduct.price > 0) {
+      let price = customizingProduct.price;
+      if (selectedExtras.includes('extra')) price += 2;
+      return price;
     }
-    
+
+    if (!selectedSize) return 0;
+
     const sizePrices = {
       PEQUENO: 12,
       MEDIO: 35,
       GRANDE: 60,
     };
-    
+
     let price = sizePrices[selectedSize as Size];
-    
-    if (selectedExtras.includes('extra')) {
-      price += 2;
-    }
-    
+    if (selectedExtras.includes('extra')) price += 2;
     return price;
   };
 
@@ -116,7 +119,8 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
         extras: selectedExtras.filter(e => e !== 'nenhum'),
       };
     } else {
-      const priceForSize = defaultSize ? sizePrices[defaultSize] : product.price;
+      // If admin set a fixed product price, prefer it. Otherwise use selected size price.
+      const priceForSize = (product.price && product.price > 0) ? product.price : (defaultSize ? sizePrices[defaultSize] : 0);
       newCartItem = {
         id: defaultSize ? `${product.id}-${defaultSize}` : product.id,
         productId: product.id,
@@ -306,12 +310,12 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                   )}
                 </div>
                 <div className="p-4 md:p-5 flex flex-col flex-1">
-                  <h3 className="text-base md:text-lg font-normal text-stone-800 mb-2 md:mb-3 line-clamp-2 min-h-[3.5rem]">
+                  <h3 className="text-base md:text-lg font-normal text-stone-800 mb-2 md:mb-3 line-clamp-2 min-h-14">
                     {product.name}
                   </h3>
                   
                   {product.description && (
-                    <p className="text-xs md:text-sm text-stone-600 mb-3 md:mb-4 line-clamp-2 flex-grow">
+                    <p className="text-xs md:text-sm text-stone-600 mb-3 md:mb-4 line-clamp-2 grow">
                       {product.description}
                     </p>
                   )}
@@ -320,10 +324,11 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                     <div>
                       <label className="block text-xs font-medium text-stone-600 mb-1">Tamanho</label>
                       <select
-                        value={productSizes[product.id] || 'PEQUENO'}
-                        onChange={(e) => setProductSizes({...productSizes, [product.id]: e.target.value as Size})}
+                        value={productSizes[product.id] || ''}
+                        onChange={(e) => setProductSizes({...productSizes, [product.id]: e.target.value as Size | ''})}
                         className="w-full border border-stone-200 px-2 py-2 rounded-lg text-sm focus:outline-none focus:border-rose-500 bg-white"
                       >
+                        <option value="">Selecione o tamanho</option>
                         <option value="PEQUENO">Pequeno</option>
                         <option value="MEDIO">Médio</option>
                         <option value="GRANDE">Grande</option>
@@ -332,12 +337,17 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                     
                     <div className="flex items-center justify-between pt-2 border-t border-stone-100">
                       <span className="text-lg md:text-xl font-light text-rose-600">
-                        R$ {formatPrice(sizePrices[productSizes[product.id] || 'PEQUENO'])}
+                        {product.price && product.price > 0 ? (
+                          `R$ ${formatPrice(product.price)}`
+                        ) : (
+                          `R$ ${formatPrice(sizePrices[productSizes[product.id] || 'PEQUENO'])}`
+                        )}
                       </span>
                       <button
-                        onClick={() => addToCart(product, false, productSizes[product.id] || 'PEQUENO')}
-                        className="w-10 h-10 md:w-10 md:h-10 bg-stone-800 text-white rounded-lg flex items-center justify-center hover:bg-stone-700 transition-colors cursor-pointer active:scale-95"
+                        onClick={() => addToCart(product, false, productSizes[product.id] || undefined)}
+                        className={`w-10 h-10 md:w-10 md:h-10 ${((product.price && product.price > 0) || productSizes[product.id]) ? 'bg-stone-800 text-white hover:bg-stone-700' : 'bg-stone-200 text-stone-400 cursor-not-allowed'} rounded-lg flex items-center justify-center transition-colors active:scale-95`}
                         aria-label={`Adicionar ${product.name} ao carrinho`}
+                        disabled={!((product.price && product.price > 0) || productSizes[product.id])}
                       >
                         <ShoppingCart className="w-5 h-5 md:w-5 md:h-5" />
                       </button>
@@ -369,7 +379,7 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                   setCustomizingProduct(null);
                   resetCustomization();
                 }}
-                className="w-10 h-10 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer flex-shrink-0"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors cursor-pointer shrink-0"
                 aria-label="Fechar"
               >
                 <X className="w-5 h-5" />

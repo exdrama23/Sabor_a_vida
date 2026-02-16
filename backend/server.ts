@@ -7,13 +7,19 @@ import fs from 'fs/promises';
 import prisma from './db';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
+import crypto  from 'crypto';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { getWhatsAppMarkupLink, OrderData, sendOrderToWhatsApp } from './whatsapp';
+
+console.log('🚀 Iniciando servidor...');
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 const isProd = process.env.NODE_ENV === 'production';
 
-const mercadopagoAccessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN || 'TEST-8225018086266291-020819-cd2a293f4c9e16780ddc5034a732286e-246177773';
-const mercadopagoPublicKey = process.env.MERCADO_PAGO_PUBLIC_KEY || 'TEST-47faef05-fa43-43bb-b7e7-43501a862284';
+// Usar credenciais de produção do Mercado Pago
+const mercadopagoAccessToken = process.env.MERCADO_PAGO_ACESS_TOKEN_KEY || process.env.MERCADO_PAGO_ACESS_TOKEN || '';
+const mercadopagoPublicKey = process.env.MERCADO_PAGO_PUBLIC_KEY || '';
+const webhookSignatureKey = process.env.WEBHOOKS_NOTIFICACOES || '';
 
 const clientConfig = new MercadoPagoConfig({ accessToken: mercadopagoAccessToken });
 const paymentClient = new Payment(clientConfig);
@@ -142,9 +148,11 @@ router.get('/product/image/:id', async(req, res)=>{
 router.get('/product', async(req, res)=>{
     try {
         const products = await prisma.products.findMany({
+            orderBy: {created_at: 'desc'},
             omit: {
-                created_at: true, updated_at: true
-            }, orderBy: {created_at: 'desc'}
+                created_at: true, 
+                updated_at: true
+            }
         })
         res.status(200).json(products);
     } catch (error) {
@@ -153,13 +161,7 @@ router.get('/product', async(req, res)=>{
     }
 })
 
-const storage = multer.diskStorage({
-    destination: 'uploads/',
-    filename: (_req, file, cb) => {
-        const fileName = `${Date.now()}-${file.originalname}`;
-        cb(null, fileName);
-    }
-});
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 router.post('/product', jwtValidate, upload.single('image_file'), async(req, res)=>{
@@ -185,8 +187,9 @@ router.post('/product', jwtValidate, upload.single('image_file'), async(req, res
             return res.status(400).json({error: `Tamanho inválido. Use: ${validSizes.join(', ')}`});
         }
 
-        const imagePath = req.file.path;
-        const imageBuffer = await fs.readFile(imagePath);
+        // memoryStorage armazena em buffer, não em path
+        // Converter Buffer para Uint8Array para compatibilidade com Prisma
+        const imageBuffer = new Uint8Array(req.file.buffer);
         
         const newProduct = await prisma.products.create({
             data: {
@@ -203,7 +206,7 @@ router.post('/product', jwtValidate, upload.single('image_file'), async(req, res
 
         try {
             imageCache.set(newProduct.id, {
-                buffer: imageBuffer,
+                buffer: Buffer.from(imageBuffer),
                 contentType: 'image/jpeg',
                 expiresAt: Date.now() + IMAGE_CACHE_TTL_MS
             });
@@ -231,9 +234,8 @@ router.put('/product/:id', jwtValidate, upload.single('image_file'), async (req,
         if (typeof featured !== 'undefined') updateData.featured = featured === 'true' || featured === true;
 
         if (req.file) {
-            const imagePath = req.file.path;
-            const imageBuffer = await fs.readFile(imagePath);
-            updateData.image = imageBuffer;
+            // Converter Buffer para Uint8Array para compatibilidade com Prisma
+            updateData.image = new Uint8Array(req.file.buffer);
         }
 
         const updated = await prisma.products.update({
@@ -245,7 +247,7 @@ router.put('/product/:id', jwtValidate, upload.single('image_file'), async (req,
         if (updateData.image) {
             try {
                 imageCache.set(id, {
-                    buffer: updateData.image,
+                    buffer: Buffer.from(updateData.image),
                     contentType: 'image/jpeg',
                     expiresAt: Date.now() + IMAGE_CACHE_TTL_MS
                 });
@@ -282,11 +284,46 @@ router.post('/payment/card', async(req, res) => {
             cardHolder, 
             installments,
             description,
-            payer
+            payer,
+            orderData // Novos dados do pedido
         } = req.body;
 
         if (!amount || !token || !cardHolder || !payer) {
             return res.status(400).json({ error: 'Dados incompletos para o pagamento' });
+        }
+
+        // Primeiro, salvar o pedido
+        const externalReference = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        if (orderData) {
+            await prisma.orders.create({
+                data: {
+                    externalReference,
+                    customerName: orderData.customerName,
+                    customerEmail: orderData.customerEmail,
+                    customerPhone: orderData.customerPhone,
+                    customerCpf: orderData.customerCpf,
+                    addressStreet: orderData.addressStreet,
+                    addressNumber: orderData.addressNumber,
+                    addressComplement: orderData.addressComplement || null,
+                    addressNeighborhood: orderData.addressNeighborhood,
+                    addressCity: orderData.addressCity,
+                    addressState: orderData.addressState,
+                    addressZip: orderData.addressZip,
+                    addressReference: orderData.addressReference || null,
+                    addressType: orderData.addressType,
+                    deliveryNotes: orderData.deliveryNotes || null,
+                    items: orderData.items || [],
+                    cakeSize: orderData.cakeSize || null,
+                    subtotal: parseFloat(orderData.subtotal),
+                    deliveryPrice: parseFloat(orderData.deliveryPrice),
+                    totalPrice: parseFloat(orderData.totalPrice),
+                    paymentMethod: 'CREDIT_CARD',
+                    paymentStatus: 'PENDING',
+                    cardLastFour: (token as string).slice(-4),
+                    installments: parseInt(installments) || 1
+                }
+            });
         }
 
         let paymentMethodId = 'credit_card';
@@ -307,6 +344,7 @@ router.post('/payment/card', async(req, res) => {
             installments: parseInt(installments) || 1,
             description: description || 'Compra - Sabor à Vida',
             token: token,
+            external_reference: externalReference,
             payer: {
                 email: payer.email,
                 first_name: payer.firstName,
@@ -325,12 +363,31 @@ router.post('/payment/card', async(req, res) => {
         });
 
         if (paymentData && paymentData.id) {
-            console.log('Card payment successful:', paymentData.id);
+            console.log('Card payment successful:', paymentData.id, 'Status:', paymentData.status);
+
+            // Se o pagamento foi aprovado imediatamente, atualizar o pedido
+            if (paymentData.status === 'approved') {
+                try {
+                    await prisma.orders.updateMany({
+                        where: { externalReference },
+                        data: {
+                            paymentStatus: 'APPROVED',
+                            mercadoPagoPaymentId: String(paymentData.id),
+                            updated_at: new Date()
+                        }
+                    });
+                    console.log('Order updated with approved status');
+                } catch (updateError) {
+                    console.error('Error updating order status:', updateError);
+                }
+            }
+
             res.status(200).json({
                 success: true,
                 paymentId: paymentData.id,
                 status: paymentData.status,
-                statusDetail: paymentData.status_detail
+                statusDetail: (paymentData as any).status_detail,
+                orderReference: externalReference
             });
         } else {
             console.error('Card payment failed:', paymentData);
@@ -355,11 +412,44 @@ router.post('/payment/pix', async(req, res) => {
             amount, 
             description, 
             payer,
-            externalReference
+            externalReference,
+            orderData // Novos dados do pedido
         } = req.body;
 
         if (!amount || !payer) {
             return res.status(400).json({ error: 'Dados incompletos para o pagamento Pix' });
+        }
+
+        const finalExternalReference = externalReference || `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        // Primeiro, salvar o pedido
+        if (orderData) {
+            await prisma.orders.create({
+                data: {
+                    externalReference: finalExternalReference,
+                    customerName: orderData.customerName,
+                    customerEmail: orderData.customerEmail,
+                    customerPhone: orderData.customerPhone,
+                    customerCpf: orderData.customerCpf,
+                    addressStreet: orderData.addressStreet,
+                    addressNumber: orderData.addressNumber,
+                    addressComplement: orderData.addressComplement || null,
+                    addressNeighborhood: orderData.addressNeighborhood,
+                    addressCity: orderData.addressCity,
+                    addressState: orderData.addressState,
+                    addressZip: orderData.addressZip,
+                    addressReference: orderData.addressReference || null,
+                    addressType: orderData.addressType,
+                    deliveryNotes: orderData.deliveryNotes || null,
+                    items: orderData.items || [],
+                    cakeSize: orderData.cakeSize || null,
+                    subtotal: parseFloat(orderData.subtotal),
+                    deliveryPrice: parseFloat(orderData.deliveryPrice),
+                    totalPrice: parseFloat(orderData.totalPrice),
+                    paymentMethod: 'PIX',
+                    paymentStatus: 'PENDING'
+                }
+            });
         }
 
         const createPaymentRequest = {
@@ -375,7 +465,7 @@ router.post('/payment/pix', async(req, res) => {
                     number: payer.cpf?.replace(/\D/g, '') || ''
                 }
             },
-            external_reference: externalReference || `order_${Date.now()}`
+            external_reference: finalExternalReference
         };
 
         console.log('Processing PIX payment:', createPaymentRequest);
@@ -385,16 +475,30 @@ router.post('/payment/pix', async(req, res) => {
         });
 
         if (paymentData && paymentData.id) {
-            const pixQrCode = (paymentData as any).point_of_interaction?.qr_code?.qr_code || null;
+            // const pixQrCode = (paymentData as any).point_of_interaction?.qr_code?.qr_code || null;
+            const transactionData = (paymentData as any).point_of_interaction?.transaction_data;
+
+            const qrCode = transactionData?.qr_code || null;
+            const qrCodeBase64 = transactionData?.qr_code_base64 || null;
             console.log('PIX payment successful:', paymentData.id);
 
+            // res.status(200).json({
+            //     success: true,
+            //     paymentId: paymentData.id,
+            //     status: paymentData.status,
+            //     statusDetail: (paymentData as any).status_detail,
+            //     qrCode: pixQrCode,
+            //     pixData: (paymentData as any).point_of_interaction?.qr_code || null,
+            //     orderReference: finalExternalReference
+            // });
             res.status(200).json({
                 success: true,
                 paymentId: paymentData.id,
                 status: paymentData.status,
                 statusDetail: (paymentData as any).status_detail,
-                qrCode: pixQrCode,
-                pixData: (paymentData as any).point_of_interaction?.qr_code || null
+                qrCode,              
+                qrCodeBase64,        
+                orderReference: finalExternalReference
             });
         } else {
             console.error('PIX payment failed:', paymentData);
@@ -433,17 +537,393 @@ router.post('/payment/card-token', async(req, res) => {
     }
 });
 
-router.post('/webhook/mercadopago', async(req, res) => {
+// Handler do webhook do Mercado Pago (função reutilizável)
+async function handleMercadoPagoWebhook(req: Request, res: Response) {
     try {
-        console.log('Webhook Mercado Pago:', req.body);
+        console.log('=== WEBHOOK MERCADO PAGO RECEBIDO ===');
+        console.log('URL:', req.originalUrl);
+        console.log('Headers:', JSON.stringify(req.headers, null, 2));
+        console.log('Body:', JSON.stringify(req.body, null, 2));
+        console.log('Query:', JSON.stringify(req.query, null, 2));
+
+        // O Mercado Pago envia webhooks de duas formas:
+        // 1. IPN (Instant Payment Notification) com action e data.id no body
+        // 2. Webhook com type e data.id no body
+        // 3. Query params: ?type=payment&data.id=123
+
+        // Verificar tipo de notificação
+        let type = req.body?.type || req.body?.action || req.query?.type;
+        let paymentId = req.body?.data?.id || req.query?.['data.id'];
+
+        // Formato alternativo IPN
+        if (!paymentId && req.body?.id) {
+            paymentId = req.body.id;
+        }
+
+        // Formato topic/id (IPN antigo)
+        if (!paymentId && req.query?.topic === 'payment' && req.query?.id) {
+            paymentId = req.query.id;
+            type = 'payment';
+        }
+
+        console.log(`Tipo de notificação: ${type}, Payment ID: ${paymentId}`);
+
+        if (type !== 'payment' && type !== 'payment.created' && type !== 'payment.updated') {
+            console.log(`Ignoring webhook type: ${type}`);
+            return res.status(200).json({ success: true, message: 'Ignored - not a payment notification' });
+        }
+
+        if (!paymentId) {
+            console.error('Payment ID não encontrado no webhook');
+            console.log('Body completo:', req.body);
+            return res.status(200).json({ success: true, message: 'No payment ID' });
+        }
+
+        console.log(`=== Processando pagamento ID: ${paymentId} ===`);
+
+        // Buscar dados do pagamento do Mercado Pago usando SDKv2
+        let paymentData;
+        try {
+            paymentData = await paymentClient.get({ id: String(paymentId) });
+            console.log('Dados do pagamento do MP:', JSON.stringify(paymentData, null, 2));
+        } catch (fetchError) {
+            console.error('Erro ao buscar dados do pagamento:', fetchError);
+            return res.status(500).json({ error: 'Failed to fetch payment data from Mercado Pago' });
+        }
+
+        const externalReference = (paymentData as any).external_reference;
+        const status = (paymentData as any).status;
+        const statusDetail = (paymentData as any).status_detail;
+        const transactionAmount = (paymentData as any).transaction_amount;
+        const paymentMethodId = (paymentData as any).payment_method_id;
+
+        console.log(`External Reference: ${externalReference}`);
+        console.log(`Status: ${status} - ${statusDetail}`);
+        console.log(`Amount: ${transactionAmount}`);
+        console.log(`Payment Method: ${paymentMethodId}`);
+
+        if (!externalReference) {
+            console.warn('No external_reference found in payment data');
+            return res.status(200).json({ success: true, message: 'No external reference' });
+        }
+
+        // Mapear status do Mercado Pago para status do banco
+        const dbStatus = status === 'approved' ? 'APPROVED' : status === 'rejected' ? 'REJECTED' : status === 'cancelled' ? 'CANCELLED' : 'PENDING';
+
+        // Salvar dados do pagamento no banco
+        try {
+            await prisma.payments.upsert({
+                where: { mercadoPagoId: String(paymentId) },
+                update: {
+                    status: dbStatus,
+                    statusDetail: statusDetail || null,
+                    webhookData: paymentData as any,
+                    updated_at: new Date()
+                },
+                create: {
+                    mercadoPagoId: String(paymentId),
+                    orderExternalRef: externalReference,
+                    status: dbStatus,
+                    statusDetail: statusDetail || null,
+                    transactionAmount: (paymentData as any).transaction_amount || 0,
+                    paymentMethodId: (paymentData as any).payment_method_id || 'unknown',
+                    webhookData: paymentData as any
+                }
+            });
+            console.log(`✓ Payment record saved/updated with status: ${dbStatus}`);
+        } catch (dbError) {
+            console.error('Erro ao salvar payment no banco:', dbError);
+            // Continua mesmo se falhar para tentar atualizar order
+        }
+
+        // Atualizar pedido no banco com novo status
+        try {
+            await prisma.orders.updateMany({
+                where: { externalReference },
+                data: {
+                    paymentStatus: dbStatus,
+                    mercadoPagoPaymentId: String(paymentId),
+                    updated_at: new Date()
+                }
+            });
+            console.log(`✓ Order updated with payment status: ${dbStatus}`);
+        } catch (orderUpdateError) {
+            console.error('Erro ao atualizar order no banco:', orderUpdateError);
+        }
+
+        // Se pagamento foi aprovado, enviar notificação ao WhatsApp admin
+        if (status === 'approved') {
+            try {
+                const fullOrder = await prisma.orders.findFirst({
+                    where: { externalReference }
+                });
+
+                if (fullOrder) {
+                    console.log(`Pedido encontrado: ${fullOrder.customerName}`);
+
+                    const orderData: OrderData = {
+                        customerName: fullOrder.customerName,
+                        customerEmail: fullOrder.customerEmail,
+                        customerPhone: fullOrder.customerPhone,
+                        customerCpf: fullOrder.customerCpf,
+                        addressStreet: fullOrder.addressStreet,
+                        addressNumber: fullOrder.addressNumber,
+                        addressComplement: fullOrder.addressComplement || undefined,
+                        addressNeighborhood: fullOrder.addressNeighborhood,
+                        addressCity: fullOrder.addressCity,
+                        addressState: fullOrder.addressState,
+                        addressZip: fullOrder.addressZip,
+                        addressReference: fullOrder.addressReference || undefined,
+                        addressType: fullOrder.addressType || undefined,
+                        deliveryNotes: fullOrder.deliveryNotes || undefined,
+                        items: (fullOrder.items as any) || [],
+                        cakeSize: fullOrder.cakeSize || undefined,
+                        subtotal: Number(fullOrder.subtotal),
+                        deliveryPrice: Number(fullOrder.deliveryPrice),
+                        totalPrice: Number(fullOrder.totalPrice),
+                        paymentMethod: fullOrder.paymentMethod,
+                        paymentStatus: 'APPROVED',
+                        cardLastFour: fullOrder.cardLastFour || undefined,
+                        installments: fullOrder.installments || undefined
+                    };
+
+                    // Enviar para WhatsApp via Z-API ou Business API (com fallback)
+                    const whatsappSent = await sendOrderToWhatsApp(orderData);
+                    if (whatsappSent) {
+                        console.log('WhatsApp notification sent successfully');
+                    } else {
+                        console.warn('WhatsApp notification failed, but continuing');
+                    }
+                } else {
+                    console.warn(`Order not found for external reference: ${externalReference}`);
+                }
+            } catch (whatsappError) {
+                console.error('Erro ao enviar WhatsApp:', whatsappError);
+                // Não falha o webhook por erro no WhatsApp
+            }
+        } else if (status === 'rejected' || status === 'cancelled') {
+            console.log(`Payment ${status}, order marked as failed`);
+        }
+
+        // Sempre retornar 200 para confirmar ao Mercado Pago
         res.status(200).json({ success: true });
     } catch (error) {
         console.error('Erro no webhook:', error);
-        res.status(500).json({ error: 'Erro ao processar webhook' });
+        // Retornar 200 mesmo em caso de erro (para Mercado Pago não ficar tentando)
+        res.status(200).json({ success: false, error: 'Internal error processing webhook' });
+    }
+}
+
+// Registrar webhook em /api/webhook/mercadopago
+router.post('/webhook/mercadopago', handleMercadoPagoWebhook);
+
+// Novo endpoint para salvar pedido
+router.post('/order', async(req, res) => {
+    try {
+        const {
+            customerName,
+            customerEmail,
+            customerPhone,
+            customerCpf,
+            addressStreet,
+            addressNumber,
+            addressComplement,
+            addressNeighborhood,
+            addressCity,
+            addressState,
+            addressZip,
+            addressReference,
+            addressType,
+            deliveryNotes,
+            items,
+            cakeSize,
+            subtotal,
+            deliveryPrice,
+            totalPrice,
+            paymentMethod,
+            externalReference,
+            cardLastFour,
+            installments
+        } = req.body;
+
+        if (!externalReference) {
+            return res.status(400).json({ error: 'External reference é obrigatório' });
+        }
+
+        // Criar pedido
+        const order = await prisma.orders.create({
+            data: {
+                externalReference,
+                customerName,
+                customerEmail,
+                customerPhone,
+                customerCpf,
+                addressStreet,
+                addressNumber,
+                addressComplement: addressComplement || null,
+                addressNeighborhood,
+                addressCity,
+                addressState,
+                addressZip,
+                addressReference: addressReference || null,
+                addressType,
+                deliveryNotes: deliveryNotes || null,
+                items: items || [],
+                cakeSize: cakeSize || null,
+                subtotal: parseFloat(subtotal),
+                deliveryPrice: parseFloat(deliveryPrice),
+                totalPrice: parseFloat(totalPrice),
+                paymentMethod,
+                paymentStatus: 'PENDING',
+                cardLastFour: cardLastFour || null,
+                installments: installments || null
+            }
+        });
+
+        res.status(201).json({ success: true, orderId: order.id });
+    } catch (error) {
+        console.error('Erro ao criar pedido:', error);
+        res.status(500).json({ error: 'Erro ao criar pedido' });
+    }
+});
+
+
+router.get('/order/:externalReference/whatsapp-link', async(req, res) => {
+    try {
+        const { externalReference } = req.params;
+
+        const order = await prisma.orders.findUnique({
+            where: { externalReference }
+        });
+
+        if (!order) {
+            return res.status(404).json({ error: 'Pedido não encontrado' });
+        }
+
+        const orderData: OrderData = {
+            customerName: order.customerName,
+            customerEmail: order.customerEmail,
+            customerPhone: order.customerPhone,
+            customerCpf: order.customerCpf,
+            addressStreet: order.addressStreet,
+            addressNumber: order.addressNumber,
+            addressComplement: order.addressComplement || undefined,
+            addressNeighborhood: order.addressNeighborhood,
+            addressCity: order.addressCity,
+            addressState: order.addressState,
+            addressZip: order.addressZip,
+            addressReference: order.addressReference || undefined,
+            items: (order.items as any) || [],
+            cakeSize: order.cakeSize || undefined,
+            subtotal: Number(order.subtotal),
+            deliveryPrice: Number(order.deliveryPrice),
+            totalPrice: Number(order.totalPrice),
+            paymentMethod: order.paymentMethod,
+            paymentStatus: order.paymentStatus,
+            cardLastFour: order.cardLastFour || undefined,
+            installments: order.installments || undefined
+        };
+
+        const whatsappLink = getWhatsAppMarkupLink(orderData);
+
+        res.status(200).json({
+            success: true,
+            whatsappLink,
+            message: 'Link do WhatsApp gerado com sucesso'
+        });
+    } catch (error) {
+        console.error('Erro ao gerar link WhatsApp:', error);
+        res.status(500).json({ error: 'Erro ao gerar link WhatsApp' });
+    }
+});
+
+// Listar todos os pedidos
+router.get('/orders', async(req, res) => {
+    try {
+        const orders = await prisma.orders.findMany({
+            orderBy: { created_at: 'desc' }
+        });
+        res.status(200).json(orders);
+    } catch (error) {
+        console.error('Erro ao listar pedidos:', error);
+        res.status(500).json({ error: 'Erro ao listar pedidos' });
+    }
+});
+
+// Listar todos os pagamentos
+router.get('/payments', async(req, res) => {
+    try {
+        const payments = await prisma.payments.findMany({
+            orderBy: { created_at: 'desc' }
+        });
+        res.status(200).json(payments);
+    } catch (error) {
+        console.error('Erro ao listar pagamentos:', error);
+        res.status(500).json({ error: 'Erro ao listar pagamentos' });
+    }
+});
+
+// Marcar pedido como concluído (atualiza o status do pagamento para APPROVED)
+router.put('/order/:id/complete', jwtValidate, async(req, res) => {
+    try {
+        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+        const updated = await prisma.orders.update({
+            where: { id },
+            data: { 
+                paymentStatus: 'APPROVED',
+                updated_at: new Date()
+            }
+        });
+
+        res.status(200).json({ success: true, order: updated });
+    } catch (error) {
+        console.error('Erro ao concluir pedido:', error);
+        res.status(500).json({ error: 'Erro ao concluir pedido' });
+    }
+});
+
+// Deletar logs com mais de 1 ano
+router.delete('/logs/cleanup', jwtValidate, async(req, res) => {
+    try {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        // Deletar pagamentos antigos
+        const deletedPayments = await prisma.payments.deleteMany({
+            where: {
+                created_at: {
+                    lt: oneYearAgo
+                }
+            }
+        });
+
+        // Deletar pedidos antigos
+        const deletedOrders = await prisma.orders.deleteMany({
+            where: {
+                created_at: {
+                    lt: oneYearAgo
+                }
+            }
+        });
+
+        res.status(200).json({
+            success: true,
+            deletedPayments: deletedPayments.count,
+            deletedOrders: deletedOrders.count,
+            message: 'Limpeza de logs realizada com sucesso'
+        });
+    } catch (error) {
+        console.error('Erro ao limpar logs:', error);
+        res.status(500).json({ error: 'Erro ao limpar logs' });
     }
 });
 
 app.use('/api', router);
+
+// Webhook do Mercado Pago - rota alternativa sem /api para compatibilidade
+// Responde em /webhook/mercadopago (além de /api/webhook/mercadopago)
+app.post('/webhook/mercadopago', handleMercadoPagoWebhook);
 
 if (isProd) app.get(/.*/, (req, res) => res.sendFile(path.join(frontend, '/index.html')));
 

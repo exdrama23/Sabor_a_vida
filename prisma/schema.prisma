@@ -15,21 +15,79 @@ model admins {
   updated_at DateTime @updatedAt @db.Timestamptz(6)
 }
 
+model products {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String      @db.VarChar(100)
+  category    String      @db.VarChar(50)
+  price       Decimal     @db.Decimal(10, 2)
+  featured    Boolean
+  created_at  DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime    @updatedAt @db.Timestamptz(6)
+  description String?     @db.VarChar(500)
+  size        ProductSize
+  image       Bytes
+}
+
+model orders {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  externalReference    String        @unique
+  customerName         String        @db.VarChar(100)
+  customerEmail        String        @db.VarChar(254)
+  customerPhone        String        @db.VarChar(20)
+  customerCpf          String        @db.VarChar(14)
+  addressStreet        String        @db.VarChar(100)
+  addressNumber        String        @db.VarChar(20)
+  addressComplement    String?       @db.VarChar(100)
+  addressNeighborhood  String        @db.VarChar(50)
+  addressCity          String        @db.VarChar(50)
+  addressState         String        @db.VarChar(2)
+  addressZip           String        @db.VarChar(10)
+  addressReference     String?       @db.VarChar(100)
+  addressType          String        @db.VarChar(20)
+  deliveryNotes        String?       @db.VarChar(500)
+  items                Json
+  cakeSize             String?       @db.VarChar(20)
+  subtotal             Decimal       @db.Decimal(10, 2)
+  deliveryPrice        Decimal       @db.Decimal(10, 2)
+  totalPrice           Decimal       @db.Decimal(10, 2)
+  paymentMethod        PaymentMethod
+  paymentStatus        PaymentStatus @default(PENDING)
+  mercadoPagoPaymentId String?       @unique @db.VarChar(255)
+  cardLastFour         String?       @db.VarChar(4)
+  installments         Int?          @default(1)
+  created_at           DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime      @updatedAt @db.Timestamptz(6)
+  whatsappSentAt       DateTime?     @db.Timestamptz(6)
+}
+
+model payments {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderExternalRef  String
+  mercadoPagoId     String        @unique @db.VarChar(255)
+  status            PaymentStatus
+  statusDetail      String?       @db.VarChar(255)
+  transactionAmount Decimal       @db.Decimal(10, 2)
+  paymentMethodId   String        @db.VarChar(50)
+  webhookData       Json?
+  created_at        DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime      @updatedAt @db.Timestamptz(6)
+}
+
 enum ProductSize {
   PEQUENO
   MEDIO
   GRANDE
 }
 
-model products {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String   @db.VarChar(100)
-  category    String   @db.VarChar(50)
-  description String?  @db.VarChar(500)
-  price       Decimal  @db.Decimal(10, 2)
-  featured    Boolean
-  image       Bytes
-  size        ProductSize
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime @updatedAt @db.Timestamptz(6)
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  PIX
+  CREDIT_CARD
+  WHATSAPP
 }
