@@ -17,7 +17,7 @@ const JWT_SECRET = process.env.JWT_SECRET as string;
 const isProd = process.env.NODE_ENV === 'production';
 
 // Usar credenciais de produção do Mercado Pago
-const mercadopagoAccessToken = process.env.MERCADO_PAGO_ACESS_TOKEN_KEY || process.env.MERCADO_PAGO_ACESS_TOKEN || '';
+const mercadopagoAccessToken = process.env.MERCADO_PAGO_ACESS_TOKEN_KEY || '';
 const mercadopagoPublicKey = process.env.MERCADO_PAGO_PUBLIC_KEY || '';
 const webhookSignatureKey = process.env.WEBHOOKS_NOTIFICACOES || '';
 
