@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   X, 
   User, 
@@ -459,14 +459,15 @@ Aguardando confirmação!
     }
   };
 
-  const handleCepBlur = async () => {
-    const cepClean = addressData.cep.replace(/\D/g, '');
-    if (cepClean.length === 8) {
+  const lastFetchedCep = useRef<string>('');
+
+  const handleCepBlur = useCallback(async (cep: string) => {
+    const cepClean = cep.replace(/\D/g, '');
+    if (cepClean.length === 8 && cepClean !== lastFetchedCep.current) {
+      lastFetchedCep.current = cepClean;
       try {
-        console.log('Buscando CEP:', cepClean);
         const response = await fetch(`https://viacep.com.br/ws/${cepClean}/json/`);
         const data = await response.json();
-        console.log('Resposta da API:', data);
         
         if (!data.erro) {
           setAddressData(prev => ({
@@ -476,20 +477,17 @@ Aguardando confirmação!
             cidade: data.localidade || '',
             estado: data.uf || ''
           }));
-          console.log('Endereço atualizado com sucesso');
-        } else {
-          console.error('CEP não encontrado');
         }
       } catch (error) {
         console.error('Erro ao buscar CEP:', error);
       }
     }
-  };
+  }, []);
 
   useEffect(() => {
     const cepClean = addressData.cep.replace(/\D/g, '');
     if (cepClean.length === 8) {
-      handleCepBlur();
+      handleCepBlur(addressData.cep);
     }
   }, [addressData.cep, handleCepBlur]);
 
@@ -726,7 +724,7 @@ Aguardando confirmação!
                       type="text"
                       value={addressData.cep}
                       onChange={(e) => setAddressData({...addressData, cep: formatCEP(e.target.value)})}
-                      onBlur={handleCepBlur}
+                      onBlur={() => handleCepBlur(addressData.cep)}
                       className={`w-full p-3 border rounded-lg ${
                         errors.cep ? 'border-red-500' : 'border-stone-300'
                       }`}
