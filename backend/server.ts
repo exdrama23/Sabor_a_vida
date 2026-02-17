@@ -400,7 +400,7 @@ router.post('/payment/card', async(req: Request, res: Response) => {
                     address: orderData ? {
                         zip_code: orderData.addressZip?.replace(/\D/g, '') || '',
                         street_name: orderData.addressStreet || '',
-                        number: orderData.addressNumber || ''
+                        street_number: orderData.addressNumber || ''
                     } : undefined
                 },
                 shipments: orderData ? {
@@ -632,7 +632,7 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
                     address: orderData ? {
                         zip_code: orderData.addressZip?.replace(/\D/g, '') || '',
                         street_name: orderData.addressStreet || '',
-                        number: orderData.addressNumber || ''
+                        street_number: orderData.addressNumber || ''
                     } : undefined
                 },
                 shipments: orderData ? {
