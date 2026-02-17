@@ -1327,7 +1327,26 @@ router.post('/delivery/config', jwtValidate, async(req: Request, res: Response) 
             return res.status(400).json({ error: 'Faixas de preço são obrigatórias' });
         }
 
+        // Validar faixas - não permitir minKm >= maxKm
+        for (const range of ranges) {
+            const minKm = parseFloat(range.minKm);
+            const maxKm = parseFloat(range.maxKm);
+            if (minKm >= maxKm) {
+                return res.status(400).json({ 
+                    error: `Faixa inválida: mínimo (${minKm}km) deve ser menor que máximo (${maxKm}km)` 
+                });
+            }
+            if (minKm < 0 || maxKm < 0) {
+                return res.status(400).json({ error: 'Distâncias não podem ser negativas' });
+            }
+        }
+
         const coords = await getCoordinatesFromCep(originCep);
+        console.log('Coordenadas obtidas para origem:', coords);
+
+        if (!coords) {
+            console.warn('Não foi possível obter coordenadas para o CEP de origem:', originCep);
+        }
 
         await prisma.delivery_config.updateMany({
             where: { isActive: true },
@@ -1400,10 +1419,13 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
             });
         }
 
-        let originLat = config.originLat ? Number(config.originLat) : null;
-        let originLng = config.originLng ? Number(config.originLng) : null;
+        let originLat = config.originLat != null ? Number(config.originLat) : null;
+        let originLng = config.originLng != null ? Number(config.originLng) : null;
 
-        if (!originLat || !originLng) {
+        console.log('Coordenadas de origem do banco:', { originLat, originLng, originCep: config.originCep });
+
+        if (originLat == null || originLng == null) {
+            console.log('Origem sem coordenadas, buscando via CEP...');
             const originCoords = await getCoordinatesFromCep(config.originCep);
             if (originCoords) {
                 originLat = originCoords.lat;
@@ -1419,27 +1441,34 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
             }
         }
 
-        if (!originLat || !originLng) {
+        if (originLat == null || originLng == null) {
+            console.log('ERRO: Não foi possível obter coordenadas de origem');
             return res.status(200).json({ 
                 success: false, 
-                deliveryPrice: -1,
+                deliveryPrice: null,
                 distance: null,
                 error: true,
                 message: 'Não foi possível calcular distância - entre em contato pelo WhatsApp'
             });
         }
 
+        console.log('Buscando coordenadas do CEP de destino:', cep);
         const destCoords = await getCoordinatesFromCep(cep);
 
         if (!destCoords) {
+            console.log('ERRO: CEP de destino não encontrado');
             return res.status(200).json({ 
                 success: false, 
-                deliveryPrice: -1,
+                deliveryPrice: null,
                 distance: null,
                 error: true,
                 message: 'CEP de destino não encontrado - verifique o CEP ou entre em contato'
             });
         }
+
+        console.log('=== COORDENADAS FINAIS ===');
+        console.log('ORIGEM:', { lat: originLat, lng: originLng });
+        console.log('DESTINO:', destCoords);
 
         const distance = haversineDistance(
             originLat, 
@@ -1455,14 +1484,14 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
         if (!config.delivery_ranges || config.delivery_ranges.length === 0) {
             return res.status(200).json({ 
                 success: false, 
-                deliveryPrice: -1,
+                deliveryPrice: null,
                 distance: parseFloat(distance.toFixed(2)),
                 error: true,
                 message: 'Faixas de preço não configuradas - entre em contato pelo WhatsApp'
             });
         }
 
-        let deliveryPrice = -1; // Começa com -1 para indicar "não calculado"
+        let deliveryPrice: number | null = null; // Começa com null para indicar "não calculado"
         let rangeFound = false;
 
         console.log('=== DEBUG FAIXAS ===');
@@ -1504,7 +1533,7 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
                 console.log(`Fora da área: ${distance.toFixed(2)}km >= ${maxConfiguredKm}km (máximo)`);
                 return res.status(200).json({ 
                     success: true, 
-                    deliveryPrice: -1, 
+                    deliveryPrice: null, 
                     distance: parseFloat(distance.toFixed(2)),
                     outOfRange: true,
                     message: `Fora da área de entrega (${distance.toFixed(1)} km). Máximo: ${maxConfiguredKm} km`
@@ -1529,7 +1558,7 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
             success: true, 
             deliveryPrice,
             distance: parseFloat(distance.toFixed(2)),
-            message: deliveryPrice === 0 ? 'Frete grátis!' : `Taxa de entrega: R$ ${deliveryPrice.toFixed(2)}`
+            message: deliveryPrice === 0 ? 'Frete grátis!' : deliveryPrice != null ? `Taxa de entrega: R$ ${deliveryPrice.toFixed(2)}` : 'Erro no cálculo'
         });
     } catch (error) {
         console.error('Erro ao calcular frete:', error);

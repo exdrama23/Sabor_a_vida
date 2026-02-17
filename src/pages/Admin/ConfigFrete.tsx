@@ -99,6 +99,14 @@ const ConfigFrete = () => {
         return;
       }
 
+      // Validar faixas - não permitir minKm >= maxKm
+      for (const range of config.delivery_ranges) {
+        if (range.minKm >= range.maxKm) {
+          setMessage({ type: 'error', text: `Faixa inválida: mínimo (${range.minKm}km) deve ser menor que máximo (${range.maxKm}km)` });
+          return;
+        }
+      }
+
       const response = await api.post('/delivery/config', {
         originCep: config.originCep,
         originAddress: config.originAddress,

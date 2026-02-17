@@ -554,11 +554,16 @@ Aguardando confirmação!
               // Sem configuração de frete
               setDeliveryErrorMessage(deliveryResponse.data.message || 'Configure o frete');
               setCalculatedDelivery(0);
-            } else {
+            } else if (deliveryResponse.data.deliveryPrice != null) {
               // Frete calculado com sucesso
               const price = Number(deliveryResponse.data.deliveryPrice);
               console.log('Preço de entrega recebido:', price);
               setCalculatedDelivery(price >= 0 ? price : 0);
+            } else {
+              // deliveryPrice é null - erro no cálculo
+              setOutOfDeliveryRange(true);
+              setDeliveryErrorMessage(deliveryResponse.data.message || 'Erro ao calcular frete');
+              setCalculatedDelivery(0);
             }
             setDeliveryDistance(deliveryResponse.data.distance);
           } else if (deliveryResponse.data.error) {
