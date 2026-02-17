@@ -338,11 +338,33 @@ router.post('/payment/card', async(req: Request, res: Response) => {
             paymentMethodId = cardTypeMap[cardType.toLowerCase()] || 'credit_card';
         }
 
+        // Extrair DDD e número do telefone
+        const phoneClean = orderData?.customerPhone?.replace(/\D/g, '') || '';
+        const phoneAreaCode = phoneClean.slice(0, 2) || '11';
+        const phoneNumber = phoneClean.slice(2) || '';
+
+        // URL do webhook baseado no ambiente
+        const webhookUrl = isProd 
+            ? 'https://sabor-a-vida.onrender.com/api/webhook/mercadopago'
+            : 'http://localhost:2923/api/webhook/mercadopago';
+
+        // Preparar items para additional_info
+        const items = orderData?.items?.map((item: any, index: number) => ({
+            id: item.productId || `item_${index}`,
+            title: item.name || 'Produto',
+            description: item.size ? `Tamanho: ${item.size}` : 'Produto Sabor à Vida',
+            category_id: 'food',
+            quantity: item.quantity || 1,
+            unit_price: parseFloat(item.price) || 0
+        })) || [];
+
         const createPaymentRequest = {
             transaction_amount: parseFloat(amount),
             payment_method_id: paymentMethodId,
             installments: parseInt(installments) || 1,
             description: description || 'Compra - Sabor à Vida',
+            statement_descriptor: 'SABOR A VIDA',
+            notification_url: webhookUrl,
             token: token,
             external_reference: externalReference,
             payer: {
@@ -352,7 +374,43 @@ router.post('/payment/card', async(req: Request, res: Response) => {
                 identification: {
                     type: 'CPF',
                     number: payer.cpf?.replace(/\D/g, '') || ''
-                }
+                },
+                phone: {
+                    area_code: phoneAreaCode,
+                    number: phoneNumber
+                },
+                address: orderData ? {
+                    zip_code: orderData.addressZip?.replace(/\D/g, '') || '',
+                    street_name: orderData.addressStreet || '',
+                    street_number: orderData.addressNumber || '',
+                    neighborhood: orderData.addressNeighborhood || '',
+                    city: orderData.addressCity || '',
+                    federal_unit: orderData.addressState || ''
+                } : undefined
+            },
+            additional_info: {
+                items: items.length > 0 ? items : undefined,
+                payer: {
+                    first_name: payer.firstName,
+                    last_name: payer.lastName,
+                    phone: {
+                        area_code: phoneAreaCode,
+                        number: phoneNumber
+                    },
+                    address: orderData ? {
+                        zip_code: orderData.addressZip?.replace(/\D/g, '') || '',
+                        street_name: orderData.addressStreet || '',
+                        number: orderData.addressNumber || ''
+                    } : undefined
+                },
+                shipments: orderData ? {
+                    receiver_address: {
+                        zip_code: orderData.addressZip?.replace(/\D/g, '') || '',
+                        street_name: orderData.addressStreet || '',
+                        street_number: orderData.addressNumber || '',
+                        floor: orderData.addressComplement || ''
+                    }
+                } : undefined
             }
         };
 
@@ -477,10 +535,32 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             }
         }
 
+        // Extrair DDD e número do telefone
+        const phoneClean = orderData?.customerPhone?.replace(/\D/g, '') || '';
+        const phoneAreaCode = phoneClean.slice(0, 2) || '11';
+        const phoneNumber = phoneClean.slice(2) || '';
+
+        // URL do webhook baseado no ambiente
+        const webhookUrl = isProd 
+            ? 'https://sabor-a-vida.onrender.com/api/webhook/mercadopago'
+            : 'http://localhost:2923/api/webhook/mercadopago';
+
+        // Preparar items para additional_info
+        const items = orderData?.items?.map((item: any, index: number) => ({
+            id: item.productId || `item_${index}`,
+            title: item.name || 'Produto',
+            description: item.size ? `Tamanho: ${item.size}` : 'Produto Sabor à Vida',
+            category_id: 'food',
+            quantity: item.quantity || 1,
+            unit_price: parseFloat(item.price) || 0
+        })) || [];
+
         const createPaymentRequest = {
             transaction_amount: parseFloat(amount),
             payment_method_id: 'pix',
             description: description || 'Compra - Sabor à Vida',
+            statement_descriptor: 'SABOR A VIDA',
+            notification_url: webhookUrl,
             payer: {
                 email: payer.email,
                 first_name: payer.firstName,
@@ -488,10 +568,45 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
                 identification: {
                     type: 'CPF',
                     number: payer.cpf?.replace(/\D/g, '') || ''
-                }
-                
+                },
+                phone: {
+                    area_code: phoneAreaCode,
+                    number: phoneNumber
+                },
+                address: orderData ? {
+                    zip_code: orderData.addressZip?.replace(/\D/g, '') || '',
+                    street_name: orderData.addressStreet || '',
+                    street_number: orderData.addressNumber || '',
+                    neighborhood: orderData.addressNeighborhood || '',
+                    city: orderData.addressCity || '',
+                    federal_unit: orderData.addressState || ''
+                } : undefined
             },
-            external_reference: finalExternalReference
+            external_reference: finalExternalReference,
+            additional_info: {
+                items: items.length > 0 ? items : undefined,
+                payer: {
+                    first_name: payer.firstName,
+                    last_name: payer.lastName,
+                    phone: {
+                        area_code: phoneAreaCode,
+                        number: phoneNumber
+                    },
+                    address: orderData ? {
+                        zip_code: orderData.addressZip?.replace(/\D/g, '') || '',
+                        street_name: orderData.addressStreet || '',
+                        number: orderData.addressNumber || ''
+                    } : undefined
+                },
+                shipments: orderData ? {
+                    receiver_address: {
+                        zip_code: orderData.addressZip?.replace(/\D/g, '') || '',
+                        street_name: orderData.addressStreet || '',
+                        street_number: orderData.addressNumber || '',
+                        floor: orderData.addressComplement || ''
+                    }
+                } : undefined
+            }
         };
 
         console.log('Processing PIX payment:', createPaymentRequest);
@@ -551,6 +666,44 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             error: 'Erro ao processar pagamento Pix',
             details: mpError || errorMsg
         });
+    }
+});
+
+// Endpoint para verificar status do pedido (usado para polling do frontend)
+router.get('/order/status/:externalReference', async(req: Request, res: Response) => {
+    try {
+        const externalReference = req.params.externalReference as string;
+
+        const order = await prisma.orders.findUnique({
+            where: { externalReference },
+            select: {
+                id: true,
+                externalReference: true,
+                paymentStatus: true,
+                mercadoPagoPaymentId: true,
+                customerName: true,
+                updated_at: true
+            }
+        });
+
+        if (!order) {
+            return res.status(404).json({ error: 'Pedido não encontrado' });
+        }
+
+        res.status(200).json({
+            success: true,
+            order: {
+                id: order.id,
+                externalReference: order.externalReference,
+                paymentStatus: order.paymentStatus,
+                mercadoPagoPaymentId: order.mercadoPagoPaymentId,
+                customerName: order.customerName,
+                updatedAt: order.updated_at
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao verificar status do pedido:', error);
+        res.status(500).json({ error: 'Erro ao verificar status do pedido' });
     }
 });
 

@@ -8,7 +8,8 @@ import {
   ChevronRight,
   Loader2,
   Copy,
-  Check
+  Check,
+  Package
 } from 'lucide-react';
 import type { 
   CheckoutModalProps, 
@@ -72,6 +73,48 @@ const CheckoutModal = ({
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [pixData, setPixData] = useState<any>(null);
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
+  const [paymentApproved, setPaymentApproved] = useState(false);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Polling para verificar status do pagamento PIX
+  useEffect(() => {
+    if (currentStep === 5 && pixData?.orderReference && !paymentApproved) {
+      setIsCheckingPayment(true);
+      
+      const checkPaymentStatus = async () => {
+        try {
+          const response = await api.get(`/order/status/${pixData.orderReference}`);
+          if (response.data?.order?.paymentStatus === 'APPROVED') {
+            setPaymentApproved(true);
+            setIsCheckingPayment(false);
+            // Limpa o carrinho após pagamento aprovado
+            localStorage.removeItem('cart');
+            // Para de verificar
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current);
+              pollingIntervalRef.current = null;
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao verificar status:', error);
+        }
+      };
+
+      // Verifica imediatamente
+      checkPaymentStatus();
+      
+      // Verifica a cada 5 segundos
+      pollingIntervalRef.current = setInterval(checkPaymentStatus, 5000);
+
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+      };
+    }
+  }, [currentStep, pixData?.orderReference, paymentApproved]);
 
   const isMobile = () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -1319,6 +1362,40 @@ Aguardando confirmação!
 
             {currentStep === 5 && pixData && (
               <div className="space-y-8">
+                {paymentApproved ? (
+                  // Tela de pagamento aprovado
+                  <div className="text-center py-8">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <CheckCircle className="w-12 h-12 text-green-600" />
+                    </div>
+                    <h3 className="text-3xl font-bold text-green-700 mb-4">Pagamento Confirmado!</h3>
+                    <p className="text-xl text-stone-600 mb-2">
+                      Seu pedido está em andamento
+                    </p>
+                    <p className="text-stone-500 mb-8">
+                      Aguarde, em breve entraremos em contato para confirmar a entrega.
+                    </p>
+                    
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-6 max-w-md mx-auto">
+                      <div className="flex items-center gap-3 justify-center mb-4">
+                        <Package className="w-6 h-6 text-green-600" />
+                        <span className="font-bold text-green-800">Pedido Confirmado</span>
+                      </div>
+                      <p className="text-sm text-green-700">
+                        Referência: <span className="font-mono font-medium">{pixData.orderReference}</span>
+                      </p>
+                      <p className="text-sm text-green-700 mt-2">
+                        Valor: <span className="font-medium">R$ {total.toFixed(2).replace('.', ',')}</span>
+                      </p>
+                    </div>
+
+                    <p className="text-sm text-stone-500 mt-8">
+                      Você pode fechar esta janela com segurança.
+                    </p>
+                  </div>
+                ) : (
+                  // Tela de QR Code PIX
+                  <>
                 <div className="text-center">
                   <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <CreditCard className="w-8 h-8 text-rose-600" />
@@ -1327,6 +1404,12 @@ Aguardando confirmação!
                   <p className="text-stone-600 mt-2">
                     Escaneie o QR Code abaixo ou copie o código para pagar
                   </p>
+                  {isCheckingPayment && (
+                    <div className="flex items-center justify-center gap-2 mt-4 text-rose-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm">Aguardando confirmação do pagamento...</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col items-center gap-8 px-4 py-6">
@@ -1422,6 +1505,8 @@ Aguardando confirmação!
                     <p className="mt-2">A confirmação pode levar até alguns minutos.</p>
                   </div>
                 </div>
+                  </>
+                )}
               </div>
             )}
           </div>
