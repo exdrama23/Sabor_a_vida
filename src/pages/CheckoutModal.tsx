@@ -1381,7 +1381,7 @@ Aguardando confirmação!
                         Referência: <span className="font-mono font-medium">{pixData.orderReference}</span>
                       </p>
                       <p className="text-sm text-green-700 mt-2">
-                        Valor: <span className="font-medium">R$ {total.toFixed(2).replace('.', ',')}</span>
+                        Valor: <span className="font-medium">R$ {(pixData.amount || total).toFixed(2).replace('.', ',')}</span>
                       </p>
                     </div>
 
@@ -1462,7 +1462,7 @@ Aguardando confirmação!
 
                       <div className="border-t border-stone-200 pt-4">
                         <p className="text-sm text-stone-700">
-                          <strong>Valor:</strong> R$ {total.toFixed(2).replace('.', ',')}
+                          <strong>Valor:</strong> R$ {(pixData.amount || total).toFixed(2).replace('.', ',')}
                         </p>
                       </div>
                     </div>
