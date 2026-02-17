@@ -508,15 +508,11 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             return res.status(400).json({ error: 'Email é obrigatório', field: 'email' });
         }
 
-        if (!payer.firstName || payer.firstName.trim() === '') {
-            console.log('ERRO: payer.firstName está vazio ou undefined');
-            return res.status(400).json({ error: 'Nome é obrigatório', field: 'firstName' });
-        }
-
-        if (!payer.lastName || payer.lastName.trim() === '') {
-            console.log('ERRO: payer.lastName está vazio ou undefined');
-            return res.status(400).json({ error: 'Sobrenome é obrigatório', field: 'lastName' });
-        }
+        // Usar fallback se firstName ou lastName estiverem vazios
+        const firstName = (payer.firstName && payer.firstName.trim()) || 'Cliente';
+        const lastName = (payer.lastName && payer.lastName.trim()) || 'Sabor a Vida';
+        
+        console.log('Nome processado: firstName=', firstName, 'lastName=', lastName);
 
         // Validar valor do pagamento
         const amountParsed = parseFloat(amount);
@@ -604,8 +600,8 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             notification_url: webhookUrl,
             payer: {
                 email: payer.email,
-                first_name: payer.firstName,
-                last_name: payer.lastName,
+                first_name: firstName,
+                last_name: lastName,
                 identification: {
                     type: 'CPF',
                     number: payer.cpf?.replace(/\D/g, '') || ''
@@ -627,8 +623,8 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             additional_info: {
                 items: items.length > 0 ? items : undefined,
                 payer: {
-                    first_name: payer.firstName,
-                    last_name: payer.lastName,
+                    first_name: firstName,
+                    last_name: lastName,
                     phone: {
                         area_code: phoneAreaCode,
                         number: phoneNumber
