@@ -537,11 +537,9 @@ router.post('/payment/card-token', async(req, res) => {
     }
 });
 
-// Handler do webhook do Mercado Pago (função reutilizável)
-async function handleMercadoPagoWebhook(req: Request, res: Response) {
+router.post('/webhook/mercadopago', async(req, res) => {
     try {
         console.log('=== WEBHOOK MERCADO PAGO RECEBIDO ===');
-        console.log('URL:', req.originalUrl);
         console.log('Headers:', JSON.stringify(req.headers, null, 2));
         console.log('Body:', JSON.stringify(req.body, null, 2));
         console.log('Query:', JSON.stringify(req.query, null, 2));
@@ -712,10 +710,7 @@ async function handleMercadoPagoWebhook(req: Request, res: Response) {
         // Retornar 200 mesmo em caso de erro (para Mercado Pago não ficar tentando)
         res.status(200).json({ success: false, error: 'Internal error processing webhook' });
     }
-}
-
-// Registrar webhook em /api/webhook/mercadopago
-router.post('/webhook/mercadopago', handleMercadoPagoWebhook);
+});
 
 // Novo endpoint para salvar pedido
 router.post('/order', async(req, res) => {
@@ -920,10 +915,6 @@ router.delete('/logs/cleanup', jwtValidate, async(req, res) => {
 });
 
 app.use('/api', router);
-
-// Webhook do Mercado Pago - rota alternativa sem /api para compatibilidade
-// Responde em /webhook/mercadopago (além de /api/webhook/mercadopago)
-app.post('/webhook/mercadopago', handleMercadoPagoWebhook);
 
 if (isProd) app.get(/.*/, (req, res) => res.sendFile(path.join(frontend, '/index.html')));
 
