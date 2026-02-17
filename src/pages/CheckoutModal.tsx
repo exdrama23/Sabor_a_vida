@@ -1462,7 +1462,7 @@ Aguardando confirmação!
 
                       <div className="border-t border-stone-200 pt-4">
                         <p className="text-sm text-stone-700">
-                          <strong>Valor:</strong> R$ {(pixData.amount ?? total).toFixed(2).replace('.', ',')}
+                          <strong>Valor:</strong> R$ {Number(pixData?.amount ?? total ?? 0).toFixed(2).replace('.', ',')}
                         </p>
                       </div>
                     </div>
