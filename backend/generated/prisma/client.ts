@@ -62,3 +62,13 @@ export type orders = Prisma.ordersModel
  * 
  */
 export type payments = Prisma.paymentsModel
+/**
+ * Model delivery_config
+ * 
+ */
+export type delivery_config = Prisma.delivery_configModel
+/**
+ * Model delivery_ranges
+ * 
+ */
+export type delivery_ranges = Prisma.delivery_rangesModel

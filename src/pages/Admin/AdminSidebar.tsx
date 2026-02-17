@@ -8,7 +8,8 @@ import {
   Home,
   Package,
   Info,
-  ShoppingBag
+  ShoppingBag,
+  Truck
 } from 'lucide-react';
 import { logout } from '../../axiosInstance';
 
@@ -25,6 +26,7 @@ const AdminSidebar = ({ isOpen, onClose, selected, onSelect }: AdminSidebarProps
     { id: 'adicionar', icon: Cake, label: 'Adicionar Bolos' },
     { id: 'lista', icon: List, label: 'Lista de Bolos' },
     { id: 'pedidos', icon: ShoppingBag, label: 'Pedidos' },
+    { id: 'frete', icon: Truck, label: 'Frete' },
     { id: 'logs', icon: Logs, label: 'Logs' },
   ];
 

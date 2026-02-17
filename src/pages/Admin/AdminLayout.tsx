@@ -6,9 +6,10 @@ import ListaBolos from './ListaBolos';
 import AdminDashboard from './Dashboard';
 import Logs from './Logs';
 import Pedidos from './Pedidos';
+import ConfigFrete from './ConfigFrete';
 import { AdminCacheProvider } from '../../contexts/AdminCacheContext';
 
-type Panel = 'adicionar' | 'dashboard' | 'lista' | 'logs' | 'pedidos' | 'config' | `editar:${string}`;
+type Panel = 'adicionar' | 'dashboard' | 'lista' | 'logs' | 'pedidos' | 'config' | 'frete' | `editar:${string}`;
 
 const AdminLayoutContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -44,6 +45,7 @@ const AdminLayoutContent = () => {
           {selectedPanel === 'adicionar' && <AdicionarBolo onNavigate={handleNavigate} />}
           {selectedPanel === 'lista' && <ListaBolos onNavigate={handleNavigate} />}
           {selectedPanel === 'pedidos' && <Pedidos onNavigate={handleNavigate} />}
+          {selectedPanel === 'frete' && <ConfigFrete />}
           {selectedPanel === 'logs' && <Logs />}
           {selectedPanel === 'config' && (
             <div className="bg-white rounded-2xl border border-stone-200 p-8">Configurações (em breve)</div>

@@ -388,7 +388,9 @@ export const ModelName = {
   refresh_tokens: 'refresh_tokens',
   products: 'products',
   orders: 'orders',
-  payments: 'payments'
+  payments: 'payments',
+  delivery_config: 'delivery_config',
+  delivery_ranges: 'delivery_ranges'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -404,7 +406,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "admins" | "refresh_tokens" | "products" | "orders" | "payments"
+    modelProps: "admins" | "refresh_tokens" | "products" | "orders" | "payments" | "delivery_config" | "delivery_ranges"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -778,6 +780,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    delivery_config: {
+      payload: Prisma.$delivery_configPayload<ExtArgs>
+      fields: Prisma.delivery_configFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.delivery_configFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_configPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.delivery_configFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_configPayload>
+        }
+        findFirst: {
+          args: Prisma.delivery_configFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_configPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.delivery_configFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_configPayload>
+        }
+        findMany: {
+          args: Prisma.delivery_configFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_configPayload>[]
+        }
+        create: {
+          args: Prisma.delivery_configCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_configPayload>
+        }
+        createMany: {
+          args: Prisma.delivery_configCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.delivery_configCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_configPayload>[]
+        }
+        delete: {
+          args: Prisma.delivery_configDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_configPayload>
+        }
+        update: {
+          args: Prisma.delivery_configUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_configPayload>
+        }
+        deleteMany: {
+          args: Prisma.delivery_configDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.delivery_configUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.delivery_configUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_configPayload>[]
+        }
+        upsert: {
+          args: Prisma.delivery_configUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_configPayload>
+        }
+        aggregate: {
+          args: Prisma.Delivery_configAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDelivery_config>
+        }
+        groupBy: {
+          args: Prisma.delivery_configGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Delivery_configGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.delivery_configCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Delivery_configCountAggregateOutputType> | number
+        }
+      }
+    }
+    delivery_ranges: {
+      payload: Prisma.$delivery_rangesPayload<ExtArgs>
+      fields: Prisma.delivery_rangesFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.delivery_rangesFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_rangesPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.delivery_rangesFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_rangesPayload>
+        }
+        findFirst: {
+          args: Prisma.delivery_rangesFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_rangesPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.delivery_rangesFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_rangesPayload>
+        }
+        findMany: {
+          args: Prisma.delivery_rangesFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_rangesPayload>[]
+        }
+        create: {
+          args: Prisma.delivery_rangesCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_rangesPayload>
+        }
+        createMany: {
+          args: Prisma.delivery_rangesCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.delivery_rangesCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_rangesPayload>[]
+        }
+        delete: {
+          args: Prisma.delivery_rangesDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_rangesPayload>
+        }
+        update: {
+          args: Prisma.delivery_rangesUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_rangesPayload>
+        }
+        deleteMany: {
+          args: Prisma.delivery_rangesDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.delivery_rangesUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.delivery_rangesUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_rangesPayload>[]
+        }
+        upsert: {
+          args: Prisma.delivery_rangesUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$delivery_rangesPayload>
+        }
+        aggregate: {
+          args: Prisma.Delivery_rangesAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDelivery_ranges>
+        }
+        groupBy: {
+          args: Prisma.delivery_rangesGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Delivery_rangesGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.delivery_rangesCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Delivery_rangesCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -909,6 +1059,37 @@ export const PaymentsScalarFieldEnum = {
 } as const
 
 export type PaymentsScalarFieldEnum = (typeof PaymentsScalarFieldEnum)[keyof typeof PaymentsScalarFieldEnum]
+
+
+export const Delivery_configScalarFieldEnum = {
+  id: 'id',
+  originCep: 'originCep',
+  originAddress: 'originAddress',
+  originNumber: 'originNumber',
+  originNeighborhood: 'originNeighborhood',
+  originCity: 'originCity',
+  originState: 'originState',
+  originLat: 'originLat',
+  originLng: 'originLng',
+  isActive: 'isActive',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Delivery_configScalarFieldEnum = (typeof Delivery_configScalarFieldEnum)[keyof typeof Delivery_configScalarFieldEnum]
+
+
+export const Delivery_rangesScalarFieldEnum = {
+  id: 'id',
+  delivery_config_id: 'delivery_config_id',
+  minKm: 'minKm',
+  maxKm: 'maxKm',
+  price: 'price',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Delivery_rangesScalarFieldEnum = (typeof Delivery_rangesScalarFieldEnum)[keyof typeof Delivery_rangesScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1225,6 +1406,8 @@ export type GlobalOmitConfig = {
   products?: Prisma.productsOmit
   orders?: Prisma.ordersOmit
   payments?: Prisma.paymentsOmit
+  delivery_config?: Prisma.delivery_configOmit
+  delivery_ranges?: Prisma.delivery_rangesOmit
 }
 
 /* Types for Logging */

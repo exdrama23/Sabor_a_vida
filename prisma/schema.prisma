@@ -116,3 +116,36 @@ enum DeliveryStatus {
   PENDING
   DELIVERED
 }
+
+// Configurações de frete baseado em distância
+model delivery_config {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  originCep      String   @db.VarChar(10)
+  originAddress  String   @db.VarChar(200)
+  originNumber   String   @db.VarChar(20)
+  originNeighborhood String @db.VarChar(100)
+  originCity     String   @db.VarChar(100)
+  originState    String   @db.VarChar(2)
+  originLat      Decimal? @db.Decimal(10, 8)
+  originLng      Decimal? @db.Decimal(11, 8)
+  isActive       Boolean  @default(true)
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime @updatedAt @db.Timestamptz(6)
+  
+  delivery_ranges delivery_ranges[]
+}
+
+// Faixas de preço por distância
+model delivery_ranges {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  delivery_config_id String       @db.Uuid
+  minKm           Decimal         @db.Decimal(5, 2)
+  maxKm           Decimal         @db.Decimal(5, 2)
+  price           Decimal         @db.Decimal(10, 2)
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime        @updatedAt @db.Timestamptz(6)
+  
+  delivery_config delivery_config @relation(fields: [delivery_config_id], references: [id], onDelete: Cascade)
+  
+  @@index([delivery_config_id])
+}

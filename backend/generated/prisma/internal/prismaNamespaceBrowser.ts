@@ -55,7 +55,9 @@ export const ModelName = {
   refresh_tokens: 'refresh_tokens',
   products: 'products',
   orders: 'orders',
-  payments: 'payments'
+  payments: 'payments',
+  delivery_config: 'delivery_config',
+  delivery_ranges: 'delivery_ranges'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -166,6 +168,37 @@ export const PaymentsScalarFieldEnum = {
 } as const
 
 export type PaymentsScalarFieldEnum = (typeof PaymentsScalarFieldEnum)[keyof typeof PaymentsScalarFieldEnum]
+
+
+export const Delivery_configScalarFieldEnum = {
+  id: 'id',
+  originCep: 'originCep',
+  originAddress: 'originAddress',
+  originNumber: 'originNumber',
+  originNeighborhood: 'originNeighborhood',
+  originCity: 'originCity',
+  originState: 'originState',
+  originLat: 'originLat',
+  originLng: 'originLng',
+  isActive: 'isActive',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Delivery_configScalarFieldEnum = (typeof Delivery_configScalarFieldEnum)[keyof typeof Delivery_configScalarFieldEnum]
+
+
+export const Delivery_rangesScalarFieldEnum = {
+  id: 'id',
+  delivery_config_id: 'delivery_config_id',
+  minKm: 'minKm',
+  maxKm: 'maxKm',
+  price: 'price',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type Delivery_rangesScalarFieldEnum = (typeof Delivery_rangesScalarFieldEnum)[keyof typeof Delivery_rangesScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -9,7 +9,8 @@ import {
   Loader2,
   Copy,
   Check,
-  Package
+  Package,
+  Truck
 } from 'lucide-react';
 import type { 
   CheckoutModalProps, 
@@ -29,7 +30,6 @@ const CheckoutModal = ({
   cartItems, 
   subtotal, 
   delivery, 
-  total,
   onConfirmPayment 
 }: CheckoutModalProps) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -76,6 +76,16 @@ const CheckoutModal = ({
   const [paymentApproved, setPaymentApproved] = useState(false);
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Estados para cálculo de frete dinâmico
+  const [calculatedDelivery, setCalculatedDelivery] = useState<number>(delivery);
+  const [deliveryDistance, setDeliveryDistance] = useState<number | null>(null);
+  const [isCalculatingDelivery, setIsCalculatingDelivery] = useState(false);
+  const [outOfDeliveryRange, setOutOfDeliveryRange] = useState(false);
+  const [deliveryErrorMessage, setDeliveryErrorMessage] = useState<string>('');
+
+  // Total dinâmico com frete calculado (se fora da área, não calcula total)
+  const dynamicTotal = outOfDeliveryRange ? 0 : subtotal + calculatedDelivery;
 
   useEffect(() => {
     if (currentStep === 5 && pixData?.orderReference && !paymentApproved) {
@@ -147,8 +157,8 @@ ${boloTamanho}
 
 *RESUMO DO PAGAMENTO*
 Subtotal: R$ ${subtotal.toFixed(2)}
-Entrega: R$ ${delivery.toFixed(2)}
-*TOTAL: R$ ${total.toFixed(2)}*
+Entrega: R$ ${calculatedDelivery.toFixed(2)}
+*TOTAL: R$ ${dynamicTotal.toFixed(2)}*
 
 Aguardando confirmação!
     `.trim();
@@ -307,6 +317,11 @@ Aguardando confirmação!
         break;
       case 2:
         isValid = validateStep2();
+        // Bloqueia se estiver fora da área de entrega
+        if (isValid && outOfDeliveryRange) {
+          setPaymentError('Endereço fora da área de entrega. Entre em contato pelo WhatsApp.');
+          isValid = false;
+        }
         break;
       case 3:
         isValid = validateStep3();
@@ -314,6 +329,7 @@ Aguardando confirmação!
     }
     
     if (isValid && currentStep < 4) {
+      setPaymentError(null);
       setCurrentStep(currentStep + 1);
     }
   };
@@ -361,7 +377,7 @@ Aguardando confirmação!
         console.log('Enviando PIX - Nome:', firstName, lastName, 'CPF:', customerData.cpf);
         
         const pixPaymentData = {
-          amount: total,
+          amount: dynamicTotal,
           description: 'Compra de produtos - Sabor à Vida',
           payer: {
             email: customerData.email,
@@ -394,8 +410,8 @@ Aguardando confirmação!
             })),
             cakeSize: localStorage.getItem('boloTamanhoSelecionado') || '',
             subtotal,
-            deliveryPrice: delivery,
-            totalPrice: total
+            deliveryPrice: calculatedDelivery,
+            totalPrice: dynamicTotal
           }
         };
 
@@ -427,7 +443,7 @@ Aguardando confirmação!
           }
 
           const cardPaymentData = {
-            amount: total,
+            amount: dynamicTotal,
             token: cardToken,
             cardType: cardData.tipoCartao,
             cardHolder: cardData.nomeTitular,
@@ -463,8 +479,8 @@ Aguardando confirmação!
               })),
               cakeSize: localStorage.getItem('boloTamanhoSelecionado') || '',
               subtotal,
-              deliveryPrice: delivery,
-              totalPrice: total
+              deliveryPrice: calculatedDelivery,
+              totalPrice: dynamicTotal
             }
           };
 
@@ -506,6 +522,7 @@ Aguardando confirmação!
     if (cepClean.length === 8 && cepClean !== lastFetchedCep.current) {
       lastFetchedCep.current = cepClean;
       try {
+        // Busca dados do endereço via ViaCEP
         const response = await fetch(`https://viacep.com.br/ws/${cepClean}/json/`);
         const data = await response.json();
         
@@ -517,6 +534,34 @@ Aguardando confirmação!
             cidade: data.localidade || '',
             estado: data.uf || ''
           }));
+        }
+
+        // Calcula frete baseado na distância
+        setIsCalculatingDelivery(true);
+        setOutOfDeliveryRange(false);
+        setDeliveryErrorMessage('');
+        try {
+          const deliveryResponse = await api.post('/delivery/calculate', { cep: cepClean });
+          if (deliveryResponse.data.success) {
+            if (deliveryResponse.data.outOfRange) {
+              // Fora da área de entrega
+              setOutOfDeliveryRange(true);
+              setDeliveryErrorMessage(deliveryResponse.data.message || 'Fora da área de entrega');
+              setCalculatedDelivery(0);
+            } else if (deliveryResponse.data.noConfig) {
+              // Sem configuração de frete
+              setDeliveryErrorMessage(deliveryResponse.data.message || 'Configure o frete');
+              setCalculatedDelivery(0);
+            } else {
+              setCalculatedDelivery(deliveryResponse.data.deliveryPrice || 0);
+            }
+            setDeliveryDistance(deliveryResponse.data.distance);
+          }
+        } catch (deliveryError) {
+          console.error('Erro ao calcular frete:', deliveryError);
+          setCalculatedDelivery(0);
+        } finally {
+          setIsCalculatingDelivery(false);
         }
       } catch (error) {
         console.error('Erro ao buscar CEP:', error);
@@ -945,6 +990,59 @@ Aguardando confirmação!
                       placeholder="Instruções especiais para a entrega..."
                     />
                   </div>
+
+                  {/* Info de Frete Calculado */}
+                  {addressData.cep.replace(/\D/g, '').length === 8 && (
+                    <div className="md:col-span-2">
+                      <div className={`p-4 rounded-xl flex items-center gap-3 ${
+                        isCalculatingDelivery 
+                          ? 'bg-stone-50 border border-stone-200' 
+                          : outOfDeliveryRange
+                            ? 'bg-red-50 border border-red-200'
+                            : calculatedDelivery === 0 
+                              ? 'bg-green-50 border border-green-200'
+                              : 'bg-amber-50 border border-amber-200'
+                      }`}>
+                        {isCalculatingDelivery ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin text-stone-500" />
+                            <span className="text-stone-600">Calculando frete...</span>
+                          </>
+                        ) : outOfDeliveryRange ? (
+                          <>
+                            <Truck className="w-5 h-5 text-red-600" />
+                            <div>
+                              <span className="font-medium text-red-800">
+                                Fora da área de entrega
+                              </span>
+                              {deliveryDistance !== null && (
+                                <span className="text-xs text-red-600 ml-2">
+                                  ({deliveryDistance.toFixed(1)} km)
+                                </span>
+                              )}
+                              <p className="text-xs text-red-600 mt-1">
+                                {deliveryErrorMessage || 'Entre em contato pelo WhatsApp para verificar disponibilidade'}
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Truck className={`w-5 h-5 ${calculatedDelivery === 0 ? 'text-green-600' : 'text-amber-600'}`} />
+                            <div>
+                              <span className={`font-medium ${calculatedDelivery === 0 ? 'text-green-800' : 'text-amber-800'}`}>
+                                {calculatedDelivery === 0 ? 'Frete Grátis!' : `Taxa de entrega: R$ ${calculatedDelivery.toFixed(2).replace('.', ',')}`}
+                              </span>
+                              {deliveryDistance !== null && (
+                                <span className="text-xs text-stone-500 ml-2">
+                                  (Distância: {deliveryDistance.toFixed(1)} km)
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1176,7 +1274,7 @@ Aguardando confirmação!
                         >
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
                             <option key={num} value={num}>
-                              {num}x {num > 1 ? `de R$ ${(total / num).toFixed(2).replace('.', ',')}` : `(à vista)`}
+                              {num}x {num > 1 ? `de R$ ${(dynamicTotal / num).toFixed(2).replace('.', ',')}` : `(à vista)`}
                             </option>
                           ))}
                         </select>
@@ -1243,16 +1341,21 @@ Aguardando confirmação!
                         </div>
                         
                         <div className="flex justify-between text-stone-600">
-                          <span>Entrega</span>
-                          <span className="font-medium">
-                            R$ {delivery.toFixed(2).replace('.', ',')}
+                          <div className="flex items-center gap-2">
+                            <span>Entrega</span>
+                            {deliveryDistance !== null && (
+                              <span className="text-xs text-stone-400">({deliveryDistance.toFixed(1)} km)</span>
+                            )}
+                          </div>
+                          <span className={`font-medium ${calculatedDelivery === 0 ? 'text-green-600' : ''}`}>
+                            {calculatedDelivery === 0 ? 'GRÁTIS' : `R$ ${calculatedDelivery.toFixed(2).replace('.', ',')}`}
                           </span>
                         </div>
                         
                         <div className="border-t border-stone-200 pt-4">
                           <div className="flex justify-between text-xl font-bold text-stone-900">
                             <span>Total</span>
-                            <span>R$ {total.toFixed(2).replace('.', ',')}</span>
+                            <span>R$ {dynamicTotal.toFixed(2).replace('.', ',')}</span>
                           </div>
                         </div>
                       </div>
@@ -1329,7 +1432,7 @@ Aguardando confirmação!
                               {cardData.tipoCartao.toUpperCase()} •••• {cardData.numeroCartao.slice(-4)}
                             </p>
                             <p className="text-sm text-stone-600">
-                              {cardData.parcelas}x de R$ {(total / cardData.parcelas).toFixed(2).replace('.', ',')}
+                              {cardData.parcelas}x de R$ {(dynamicTotal / cardData.parcelas).toFixed(2).replace('.', ',')}
                             </p>
                           </>
                         )}
@@ -1381,7 +1484,7 @@ Aguardando confirmação!
                         Referência: <span className="font-mono font-medium">{pixData.orderReference}</span>
                       </p>
                       <p className="text-sm text-green-700 mt-2">
-                        Valor: <span className="font-medium">R$ {(pixData.amount ?? total).toFixed(2).replace('.', ',')}</span>
+                        Valor: <span className="font-medium">R$ {(pixData.amount ?? dynamicTotal).toFixed(2).replace('.', ',')}</span>
                       </p>
                     </div>
 
@@ -1462,7 +1565,7 @@ Aguardando confirmação!
 
                       <div className="border-t border-stone-200 pt-4">
                         <p className="text-sm text-stone-700">
-                          <strong>Valor:</strong> R$ {Number(pixData?.amount ?? total ?? 0).toFixed(2).replace('.', ',')}
+                          <strong>Valor:</strong> R$ {Number(pixData?.amount ?? dynamicTotal ?? 0).toFixed(2).replace('.', ',')}
                         </p>
                       </div>
                     </div>
