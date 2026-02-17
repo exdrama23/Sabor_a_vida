@@ -34,7 +34,7 @@ const Header = ({ isMenuOpen: externalMenuOpen, setIsMenuOpen: externalSetMenuOp
             {/* mobile */}
             <img
               src={Logo2}
-              alt="Logo Sabor à Vida"
+              alt="Logo Sabor à Vida mobile"
               className="block md:hidden w-12 h-12 scale-[3.5] origin-left object-contain"
             />
           </button>
