@@ -1480,7 +1480,6 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
         console.log('Cálculo de frete - Origem:', originLat, originLng, 'Destino:', destCoords, 'Distância:', distance.toFixed(2), 'km');
         console.log('Faixas configuradas:', config.delivery_ranges.map(r => `${r.minKm}-${r.maxKm}km: R$${r.price}`).join(', '));
 
-        // Se não há faixas configuradas, retornar erro
         if (!config.delivery_ranges || config.delivery_ranges.length === 0) {
             return res.status(200).json({ 
                 success: false, 
@@ -1491,7 +1490,7 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
             });
         }
 
-        let deliveryPrice: number | null = null; // Começa com null para indicar "não calculado"
+        let deliveryPrice: number | null = null; 
         let rangeFound = false;
 
         console.log('=== DEBUG FAIXAS ===');
