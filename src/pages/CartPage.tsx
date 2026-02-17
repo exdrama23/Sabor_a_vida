@@ -179,7 +179,7 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
                       </div>
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-lg sm:text-xl font-bold text-rose-600">
-                          R$ {item.price.toFixed(2).replace('.', ',')}
+                          R$ {(item.price ?? 0).toFixed(2).replace('.', ',')}
                         </p>
                         <div className="flex items-center gap-2 sm:gap-3 bg-stone-100 rounded-lg p-1 sm:p-2">
                           <button

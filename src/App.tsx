@@ -22,7 +22,11 @@ function App() {
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const raw = localStorage.getItem('cart');
-      if (raw) return JSON.parse(raw) as CartItem[];
+      if (raw) {
+        const items = JSON.parse(raw) as CartItem[];
+        // Filtra itens com preço inválido
+        return items.filter(item => item.price != null && item.price > 0);
+      }
       return [];
     } catch {
       return [];

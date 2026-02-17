@@ -129,7 +129,7 @@ const CheckoutModal = ({
     const boloTamanho = localStorage.getItem('boloTamanhoSelecionado') || 'Não informado';
     
     const itemsList = cartItems.map(item => 
-      `• ${item.name} - Qtd: ${item.quantity} x R$ ${item.price.toFixed(2)} = R$ ${(item.price * item.quantity).toFixed(2)}`
+      `• ${item.name} - Qtd: ${item.quantity} x R$ ${(item.price ?? 0).toFixed(2)} = R$ ${((item.price ?? 0) * item.quantity).toFixed(2)}`
     ).join('\n');
 
     const message = `
@@ -1375,11 +1375,11 @@ Aguardando confirmação!
                                   {item.name}
                                 </p>
                                 <p className="text-sm text-stone-500">
-                                  {item.quantity} × R$ {item.price.toFixed(2).replace('.', ',')}
+                                  {item.quantity} × R$ {(item.price ?? 0).toFixed(2).replace('.', ',')}
                                 </p>
                               </div>
                               <div className="font-medium">
-                                R$ {(item.price * item.quantity).toFixed(2).replace('.', ',')}
+                                R$ {((item.price ?? 0) * item.quantity).toFixed(2).replace('.', ',')}
                               </div>
                             </div>
                           ))}
