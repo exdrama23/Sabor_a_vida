@@ -13,20 +13,25 @@ interface AppLayoutProps {
 const AppLayout = ({ cartItems, isMenuOpen, setIsMenuOpen }: AppLayoutProps) => {
   const location = useLocation();
   const showFixoHeader = location.pathname === '/products' || location.pathname === '/cart';
+  
+  // Ocultar header/footer no admin e login
+  const isAdminOrLogin = location.pathname.startsWith('/admin') || location.pathname === '/login';
 
   return (
     <div className="min-h-screen bg-white text-stone-800 antialiased">
-      {showFixoHeader ? (
-        <HeaderFixo isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} cartItems={cartItems} />
-      ) : (
-        <Header isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} cartItems={cartItems} />
+      {!isAdminOrLogin && (
+        showFixoHeader ? (
+          <HeaderFixo isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} cartItems={cartItems} />
+        ) : (
+          <Header isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} cartItems={cartItems} />
+        )
       )}
 
       <main>
         <Outlet />
       </main>
 
-      <Footer />
+      {!isAdminOrLogin && <Footer />}
     </div>
   );
 };

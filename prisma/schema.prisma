@@ -8,11 +8,29 @@ datasource db {
 }
 
 model admins {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String          @unique @db.VarChar(254)
+  password       String          @db.VarChar(255)
+  created_at     DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime        @updatedAt @db.Timestamptz(6)
+  refresh_tokens refresh_tokens[]
+}
+
+// Tabela de Refresh Tokens para autenticação segura
+model refresh_tokens {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email      String   @unique @db.VarChar(254)
-  password   String   @db.VarChar(255)
+  admin_id   String   @db.Uuid
+  token_hash String   @db.VarChar(255) // Hash do token (nunca armazena em texto puro)
+  expires_at DateTime @db.Timestamptz(6)
+  ip_address String?  @db.VarChar(45) // Suporta IPv6
+  user_agent String?  @db.VarChar(500)
+  is_revoked Boolean  @default(false)
   created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  
+  admin admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  
+  @@index([admin_id])
+  @@index([token_hash])
 }
 
 model products {
@@ -29,35 +47,37 @@ model products {
 }
 
 model orders {
-  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  externalReference    String        @unique
-  customerName         String        @db.VarChar(100)
-  customerEmail        String        @db.VarChar(254)
-  customerPhone        String        @db.VarChar(20)
-  customerCpf          String        @db.VarChar(14)
-  addressStreet        String        @db.VarChar(100)
-  addressNumber        String        @db.VarChar(20)
-  addressComplement    String?       @db.VarChar(100)
-  addressNeighborhood  String        @db.VarChar(50)
-  addressCity          String        @db.VarChar(50)
-  addressState         String        @db.VarChar(2)
-  addressZip           String        @db.VarChar(10)
-  addressReference     String?       @db.VarChar(100)
-  addressType          String        @db.VarChar(20)
-  deliveryNotes        String?       @db.VarChar(500)
+  id                   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  externalReference    String         @unique
+  customerName         String         @db.VarChar(100)
+  customerEmail        String         @db.VarChar(254)
+  customerPhone        String         @db.VarChar(20)
+  customerCpf          String         @db.VarChar(14)
+  addressStreet        String         @db.VarChar(100)
+  addressNumber        String         @db.VarChar(20)
+  addressComplement    String?        @db.VarChar(100)
+  addressNeighborhood  String         @db.VarChar(50)
+  addressCity          String         @db.VarChar(50)
+  addressState         String         @db.VarChar(2)
+  addressZip           String         @db.VarChar(10)
+  addressReference     String?        @db.VarChar(100)
+  addressType          String         @db.VarChar(20)
+  deliveryNotes        String?        @db.VarChar(500)
   items                Json
-  cakeSize             String?       @db.VarChar(20)
-  subtotal             Decimal       @db.Decimal(10, 2)
-  deliveryPrice        Decimal       @db.Decimal(10, 2)
-  totalPrice           Decimal       @db.Decimal(10, 2)
+  cakeSize             String?        @db.VarChar(20)
+  subtotal             Decimal        @db.Decimal(10, 2)
+  deliveryPrice        Decimal        @db.Decimal(10, 2)
+  totalPrice           Decimal        @db.Decimal(10, 2)
   paymentMethod        PaymentMethod
-  paymentStatus        PaymentStatus @default(PENDING)
-  mercadoPagoPaymentId String?       @unique @db.VarChar(255)
-  cardLastFour         String?       @db.VarChar(4)
-  installments         Int?          @default(1)
-  created_at           DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime      @updatedAt @db.Timestamptz(6)
-  whatsappSentAt       DateTime?     @db.Timestamptz(6)
+  paymentStatus        PaymentStatus  @default(PENDING)
+  deliveryStatus       DeliveryStatus @default(PENDING)
+  deliveredAt          DateTime?      @db.Timestamptz(6)
+  mercadoPagoPaymentId String?        @unique @db.VarChar(255)
+  cardLastFour         String?        @db.VarChar(4)
+  installments         Int?           @default(1)
+  created_at           DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime       @updatedAt @db.Timestamptz(6)
+  whatsappSentAt       DateTime?      @db.Timestamptz(6)
 }
 
 model payments {
@@ -90,4 +110,9 @@ enum PaymentMethod {
   PIX
   CREDIT_CARD
   WHATSAPP
+}
+
+enum DeliveryStatus {
+  PENDING
+  DELIVERED
 }

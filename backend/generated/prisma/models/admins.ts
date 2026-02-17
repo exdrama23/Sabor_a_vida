@@ -182,6 +182,7 @@ export type adminsWhereInput = {
   password?: Prisma.StringFilter<"admins"> | string
   created_at?: Prisma.DateTimeFilter<"admins"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"admins"> | Date | string
+  refresh_tokens?: Prisma.Refresh_tokensListRelationFilter
 }
 
 export type adminsOrderByWithRelationInput = {
@@ -190,6 +191,7 @@ export type adminsOrderByWithRelationInput = {
   password?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
+  refresh_tokens?: Prisma.refresh_tokensOrderByRelationAggregateInput
 }
 
 export type adminsWhereUniqueInput = Prisma.AtLeast<{
@@ -201,6 +203,7 @@ export type adminsWhereUniqueInput = Prisma.AtLeast<{
   password?: Prisma.StringFilter<"admins"> | string
   created_at?: Prisma.DateTimeFilter<"admins"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"admins"> | Date | string
+  refresh_tokens?: Prisma.Refresh_tokensListRelationFilter
 }, "id" | "email">
 
 export type adminsOrderByWithAggregationInput = {
@@ -231,6 +234,7 @@ export type adminsCreateInput = {
   password: string
   created_at?: Date | string
   updated_at?: Date | string
+  refresh_tokens?: Prisma.refresh_tokensCreateNestedManyWithoutAdminInput
 }
 
 export type adminsUncheckedCreateInput = {
@@ -239,6 +243,7 @@ export type adminsUncheckedCreateInput = {
   password: string
   created_at?: Date | string
   updated_at?: Date | string
+  refresh_tokens?: Prisma.refresh_tokensUncheckedCreateNestedManyWithoutAdminInput
 }
 
 export type adminsUpdateInput = {
@@ -247,6 +252,7 @@ export type adminsUpdateInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refresh_tokens?: Prisma.refresh_tokensUpdateManyWithoutAdminNestedInput
 }
 
 export type adminsUncheckedUpdateInput = {
@@ -255,6 +261,7 @@ export type adminsUncheckedUpdateInput = {
   password?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refresh_tokens?: Prisma.refresh_tokensUncheckedUpdateManyWithoutAdminNestedInput
 }
 
 export type adminsCreateManyInput = {
@@ -305,6 +312,11 @@ export type adminsMinOrderByAggregateInput = {
   updated_at?: Prisma.SortOrder
 }
 
+export type AdminsScalarRelationFilter = {
+  is?: Prisma.adminsWhereInput
+  isNot?: Prisma.adminsWhereInput
+}
+
 export type StringFieldUpdateOperationsInput = {
   set?: string
 }
@@ -313,6 +325,97 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type adminsCreateNestedOneWithoutRefresh_tokensInput = {
+  create?: Prisma.XOR<Prisma.adminsCreateWithoutRefresh_tokensInput, Prisma.adminsUncheckedCreateWithoutRefresh_tokensInput>
+  connectOrCreate?: Prisma.adminsCreateOrConnectWithoutRefresh_tokensInput
+  connect?: Prisma.adminsWhereUniqueInput
+}
+
+export type adminsUpdateOneRequiredWithoutRefresh_tokensNestedInput = {
+  create?: Prisma.XOR<Prisma.adminsCreateWithoutRefresh_tokensInput, Prisma.adminsUncheckedCreateWithoutRefresh_tokensInput>
+  connectOrCreate?: Prisma.adminsCreateOrConnectWithoutRefresh_tokensInput
+  upsert?: Prisma.adminsUpsertWithoutRefresh_tokensInput
+  connect?: Prisma.adminsWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.adminsUpdateToOneWithWhereWithoutRefresh_tokensInput, Prisma.adminsUpdateWithoutRefresh_tokensInput>, Prisma.adminsUncheckedUpdateWithoutRefresh_tokensInput>
+}
+
+export type adminsCreateWithoutRefresh_tokensInput = {
+  id?: string
+  email: string
+  password: string
+  created_at?: Date | string
+  updated_at?: Date | string
+}
+
+export type adminsUncheckedCreateWithoutRefresh_tokensInput = {
+  id?: string
+  email: string
+  password: string
+  created_at?: Date | string
+  updated_at?: Date | string
+}
+
+export type adminsCreateOrConnectWithoutRefresh_tokensInput = {
+  where: Prisma.adminsWhereUniqueInput
+  create: Prisma.XOR<Prisma.adminsCreateWithoutRefresh_tokensInput, Prisma.adminsUncheckedCreateWithoutRefresh_tokensInput>
+}
+
+export type adminsUpsertWithoutRefresh_tokensInput = {
+  update: Prisma.XOR<Prisma.adminsUpdateWithoutRefresh_tokensInput, Prisma.adminsUncheckedUpdateWithoutRefresh_tokensInput>
+  create: Prisma.XOR<Prisma.adminsCreateWithoutRefresh_tokensInput, Prisma.adminsUncheckedCreateWithoutRefresh_tokensInput>
+  where?: Prisma.adminsWhereInput
+}
+
+export type adminsUpdateToOneWithWhereWithoutRefresh_tokensInput = {
+  where?: Prisma.adminsWhereInput
+  data: Prisma.XOR<Prisma.adminsUpdateWithoutRefresh_tokensInput, Prisma.adminsUncheckedUpdateWithoutRefresh_tokensInput>
+}
+
+export type adminsUpdateWithoutRefresh_tokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type adminsUncheckedUpdateWithoutRefresh_tokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+
+/**
+ * Count Type AdminsCountOutputType
+ */
+
+export type AdminsCountOutputType = {
+  refresh_tokens: number
+}
+
+export type AdminsCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  refresh_tokens?: boolean | AdminsCountOutputTypeCountRefresh_tokensArgs
+}
+
+/**
+ * AdminsCountOutputType without action
+ */
+export type AdminsCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AdminsCountOutputType
+   */
+  select?: Prisma.AdminsCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * AdminsCountOutputType without action
+ */
+export type AdminsCountOutputTypeCountRefresh_tokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.refresh_tokensWhereInput
+}
 
 
 export type adminsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -321,6 +424,8 @@ export type adminsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   password?: boolean
   created_at?: boolean
   updated_at?: boolean
+  refresh_tokens?: boolean | Prisma.admins$refresh_tokensArgs<ExtArgs>
+  _count?: boolean | Prisma.AdminsCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["admins"]>
 
 export type adminsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -348,10 +453,18 @@ export type adminsSelectScalar = {
 }
 
 export type adminsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "password" | "created_at" | "updated_at", ExtArgs["result"]["admins"]>
+export type adminsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  refresh_tokens?: boolean | Prisma.admins$refresh_tokensArgs<ExtArgs>
+  _count?: boolean | Prisma.AdminsCountOutputTypeDefaultArgs<ExtArgs>
+}
+export type adminsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type adminsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $adminsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "admins"
-  objects: {}
+  objects: {
+    refresh_tokens: Prisma.$refresh_tokensPayload<ExtArgs>[]
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     email: string
@@ -752,6 +865,7 @@ readonly fields: adminsFieldRefs;
  */
 export interface Prisma__adminsClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  refresh_tokens<T extends Prisma.admins$refresh_tokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.admins$refresh_tokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$refresh_tokensPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -803,6 +917,10 @@ export type adminsFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.Intern
    */
   omit?: Prisma.adminsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.adminsInclude<ExtArgs> | null
+  /**
    * Filter, which admins to fetch.
    */
   where: Prisma.adminsWhereUniqueInput
@@ -821,6 +939,10 @@ export type adminsFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions
    */
   omit?: Prisma.adminsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.adminsInclude<ExtArgs> | null
+  /**
    * Filter, which admins to fetch.
    */
   where: Prisma.adminsWhereUniqueInput
@@ -838,6 +960,10 @@ export type adminsFindFirstArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Omit specific fields from the admins
    */
   omit?: Prisma.adminsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.adminsInclude<ExtArgs> | null
   /**
    * Filter, which admins to fetch.
    */
@@ -887,6 +1013,10 @@ export type adminsFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.
    */
   omit?: Prisma.adminsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.adminsInclude<ExtArgs> | null
+  /**
    * Filter, which admins to fetch.
    */
   where?: Prisma.adminsWhereInput
@@ -935,6 +1065,10 @@ export type adminsFindManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
    */
   omit?: Prisma.adminsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.adminsInclude<ExtArgs> | null
+  /**
    * Filter, which admins to fetch.
    */
   where?: Prisma.adminsWhereInput
@@ -977,6 +1111,10 @@ export type adminsCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    * Omit specific fields from the admins
    */
   omit?: Prisma.adminsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.adminsInclude<ExtArgs> | null
   /**
    * The data needed to create a admins.
    */
@@ -1025,6 +1163,10 @@ export type adminsUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    * Omit specific fields from the admins
    */
   omit?: Prisma.adminsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.adminsInclude<ExtArgs> | null
   /**
    * The data needed to update a admins.
    */
@@ -1092,6 +1234,10 @@ export type adminsUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    */
   omit?: Prisma.adminsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.adminsInclude<ExtArgs> | null
+  /**
    * The filter to search for the admins to update in case it exists.
    */
   where: Prisma.adminsWhereUniqueInput
@@ -1118,6 +1264,10 @@ export type adminsDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    */
   omit?: Prisma.adminsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.adminsInclude<ExtArgs> | null
+  /**
    * Filter which admins to delete.
    */
   where: Prisma.adminsWhereUniqueInput
@@ -1138,6 +1288,30 @@ export type adminsDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Intern
 }
 
 /**
+ * admins.refresh_tokens
+ */
+export type admins$refresh_tokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the refresh_tokens
+   */
+  select?: Prisma.refresh_tokensSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the refresh_tokens
+   */
+  omit?: Prisma.refresh_tokensOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.refresh_tokensInclude<ExtArgs> | null
+  where?: Prisma.refresh_tokensWhereInput
+  orderBy?: Prisma.refresh_tokensOrderByWithRelationInput | Prisma.refresh_tokensOrderByWithRelationInput[]
+  cursor?: Prisma.refresh_tokensWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Refresh_tokensScalarFieldEnum | Prisma.Refresh_tokensScalarFieldEnum[]
+}
+
+/**
  * admins without action
  */
 export type adminsDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1149,4 +1323,8 @@ export type adminsDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    * Omit specific fields from the admins
    */
   omit?: Prisma.adminsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.adminsInclude<ExtArgs> | null
 }

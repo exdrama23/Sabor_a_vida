@@ -43,6 +43,11 @@ export { Prisma }
  */
 export type admins = Prisma.adminsModel
 /**
+ * Model refresh_tokens
+ * 
+ */
+export type refresh_tokens = Prisma.refresh_tokensModel
+/**
  * Model products
  * 
  */

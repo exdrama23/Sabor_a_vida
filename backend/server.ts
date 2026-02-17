@@ -7,16 +7,25 @@ import fs from 'fs/promises';
 import prisma from './db';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
-import crypto  from 'crypto';
+import crypto from 'crypto';
+import cookieParser from 'cookie-parser';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { getWhatsAppMarkupLink, OrderData, sendOrderToWhatsApp } from './whatsapp';
+import auth, { 
+  authMiddleware, 
+  loginRateLimitMiddleware, 
+  loginHandler, 
+  refreshHandler, 
+  logoutHandler,
+  getCsrfTokenHandler,
+  authStatusHandler 
+} from './auth';
 
-console.log('🚀 Iniciando servidor...');
+console.log('[Server] Iniciando servidor...');
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 const isProd = process.env.NODE_ENV === 'production';
 
-// Usar credenciais de produção do Mercado Pago
 const mercadopagoAccessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN_KEY || '';
 const mercadopagoPublicKey = process.env.MERCADO_PAGO_PUBLIC_KEY || '';
 const webhookSignatureKey = process.env.WEBHOOKS_NOTIFICACOES || '';
@@ -42,12 +51,15 @@ app.use(cors({
     allowedHeaders: [
         'Authorization',
         'Content-Type',
+        'X-CSRF-Token',
     ],
     exposedHeaders: ['Content-Disposition'],
     credentials: true,
     optionsSuccessStatus: 200,
     maxAge: 24*60*60
 }))
+
+app.use(cookieParser());
 
 const frontend = path.join(__dirname, '../../dist');
 
@@ -65,39 +77,22 @@ type ImageCacheEntry = {
 const IMAGE_CACHE_TTL_MS = 1000 * 60 * 60;
 const imageCache = new Map<string, ImageCacheEntry>();
 
-function jwtValidate(req: Request & {admin?: object}, res: Response, next: NextFunction){
-    const accessToken = req.headers.authorization?.split(' ')[1];
-    if(!accessToken) return res.status(401).json({error: 'AccessToken deve ser fornecido.'});
-
-    try {
-        const admin = jwt.verify(accessToken, JWT_SECRET);
-        req.admin = admin as jwt.JwtPayload;
-        next()
-    } catch (err) {
-        if(err instanceof jwt.TokenExpiredError){
-            return res.status(401).json({error: 'Sessão expirada.'})
-        }
-        res.status(401).json({error: 'Sessão inválida.'})
-    }
-}
+const jwtValidate = authMiddleware;
 
 const router = express.Router();
 
-router.post('/loginadmin', async(req: Request, res: Response)=>{
-    try {
-        const {email, password} = req.body;
+router.post('/auth/login', loginRateLimitMiddleware, loginHandler);
 
-        const admin = await prisma.admins.findUnique({where: {email}});
-        if(!admin || password !== admin.password) return res.status(400).json({error: 'Credenciais inválidas.'});
+router.post('/auth/refresh', refreshHandler);
 
-        const accessToken = jwt.sign({id: admin.id, email}, JWT_SECRET, { expiresIn: '2h' });
+router.post('/auth/logout', logoutHandler);
 
-        res.status(200).json({accessToken});
-    } catch (error) {
-        console.error('Erro ao fazer login:', error)
-        res.status(500).json({error: 'Erro ao fazer login.'})
-    }
-})
+router.get('/auth/csrf', getCsrfTokenHandler);
+
+router.get('/auth/status', authStatusHandler);
+
+// Rota antiga de login (mantida para compatibilidade)
+router.post('/loginadmin', loginRateLimitMiddleware, loginHandler);
 
 router.get('/product/image/:id', async(req: Request, res: Response)=>{
     try {
@@ -875,13 +870,11 @@ router.post('/webhook/mercadopago', async(req: Request, res: Response) => {
                     webhookData: paymentData as any
                 }
             });
-            console.log(`✓ Payment record saved/updated with status: ${dbStatus}`);
+            console.log(`[OK] Payment record saved/updated with status: ${dbStatus}`);
         } catch (dbError) {
             console.error('Erro ao salvar payment no banco:', dbError);
-            // Continua mesmo se falhar para tentar atualizar order
         }
 
-        // Atualizar pedido no banco com novo status
         try {
             await prisma.orders.updateMany({
                 where: { externalReference },
@@ -891,7 +884,7 @@ router.post('/webhook/mercadopago', async(req: Request, res: Response) => {
                     updated_at: new Date()
                 }
             });
-            console.log(`✓ Order updated with payment status: ${dbStatus}`);
+            console.log(`[OK] Order updated with payment status: ${dbStatus}`);
         } catch (orderUpdateError) {
             console.error('Erro ao atualizar order no banco:', orderUpdateError);
         }
@@ -1105,7 +1098,7 @@ router.get('/payments', async(req: Request, res: Response) => {
     }
 });
 
-// Marcar pedido como concluído (atualiza o status do pagamento para APPROVED)
+// Marcar pedido como concluído/entregue
 router.put('/order/:id/complete', jwtValidate, async(req: Request, res: Response) => {
     try {
         const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -1113,7 +1106,8 @@ router.put('/order/:id/complete', jwtValidate, async(req: Request, res: Response
         const updated = await prisma.orders.update({
             where: { id },
             data: { 
-                paymentStatus: 'APPROVED',
+                deliveryStatus: 'DELIVERED',
+                deliveredAt: new Date(),
                 updated_at: new Date()
             }
         });

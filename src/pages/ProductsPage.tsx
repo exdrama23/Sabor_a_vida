@@ -76,7 +76,6 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
   const calculatePrice = (isCustomized: boolean = false) => {
     if (!isCustomized) return 0;
 
-    // If admin set a fixed price on the product, use it (ignore size prices)
     if (customizingProduct && customizingProduct.price && customizingProduct.price > 0) {
       let price = customizingProduct.price;
       if (selectedExtras.includes('extra')) price += 2;
@@ -119,8 +118,7 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
         extras: selectedExtras.filter(e => e !== 'nenhum'),
       };
     } else {
-      // If admin set a fixed product price, prefer it. Otherwise use selected size price.
-      const priceForSize = (product.price && product.price > 0) ? product.price : (defaultSize ? sizePrices[defaultSize] : 0);
+      const priceForSize = defaultSize ? sizePrices[defaultSize] : (product.price || 0);
       newCartItem = {
         id: defaultSize ? `${product.id}-${defaultSize}` : product.id,
         productId: product.id,
@@ -337,10 +335,10 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
                     
                     <div className="flex items-center justify-between pt-2 border-t border-stone-100">
                       <span className="text-lg md:text-xl font-light text-rose-600">
-                        {product.price && product.price > 0 ? (
-                          `R$ ${formatPrice(product.price)}`
+                        {productSizes[product.id] ? (
+                          `R$ ${formatPrice(sizePrices[productSizes[product.id] as Size])}`
                         ) : (
-                          `R$ ${formatPrice(sizePrices[productSizes[product.id] || 'PEQUENO'])}`
+                          `R$ ${formatPrice(product.price || 0)}`
                         )}
                       </span>
                       <button

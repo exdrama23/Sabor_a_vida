@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   admins: 'admins',
+  refresh_tokens: 'refresh_tokens',
   products: 'products',
   orders: 'orders',
   payments: 'payments'
@@ -82,6 +83,20 @@ export const AdminsScalarFieldEnum = {
 } as const
 
 export type AdminsScalarFieldEnum = (typeof AdminsScalarFieldEnum)[keyof typeof AdminsScalarFieldEnum]
+
+
+export const Refresh_tokensScalarFieldEnum = {
+  id: 'id',
+  admin_id: 'admin_id',
+  token_hash: 'token_hash',
+  expires_at: 'expires_at',
+  ip_address: 'ip_address',
+  user_agent: 'user_agent',
+  is_revoked: 'is_revoked',
+  created_at: 'created_at'
+} as const
+
+export type Refresh_tokensScalarFieldEnum = (typeof Refresh_tokensScalarFieldEnum)[keyof typeof Refresh_tokensScalarFieldEnum]
 
 
 export const ProductsScalarFieldEnum = {
@@ -124,6 +139,8 @@ export const OrdersScalarFieldEnum = {
   totalPrice: 'totalPrice',
   paymentMethod: 'paymentMethod',
   paymentStatus: 'paymentStatus',
+  deliveryStatus: 'deliveryStatus',
+  deliveredAt: 'deliveredAt',
   mercadoPagoPaymentId: 'mercadoPagoPaymentId',
   cardLastFour: 'cardLastFour',
   installments: 'installments',

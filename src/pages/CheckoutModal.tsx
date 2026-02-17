@@ -77,7 +77,6 @@ const CheckoutModal = ({
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Polling para verificar status do pagamento PIX
   useEffect(() => {
     if (currentStep === 5 && pixData?.orderReference && !paymentApproved) {
       setIsCheckingPayment(true);
@@ -88,9 +87,7 @@ const CheckoutModal = ({
           if (response.data?.order?.paymentStatus === 'APPROVED') {
             setPaymentApproved(true);
             setIsCheckingPayment(false);
-            // Limpa o carrinho após pagamento aprovado
             localStorage.removeItem('cart');
-            // Para de verificar
             if (pollingIntervalRef.current) {
               clearInterval(pollingIntervalRef.current);
               pollingIntervalRef.current = null;
@@ -101,10 +98,8 @@ const CheckoutModal = ({
         }
       };
 
-      // Verifica imediatamente
       checkPaymentStatus();
-      
-      // Verifica a cada 5 segundos
+
       pollingIntervalRef.current = setInterval(checkPaymentStatus, 5000);
 
       return () => {
@@ -120,7 +115,6 @@ const CheckoutModal = ({
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   };
 
-  // Gerar mensagem para WhatsApp
   const generateWhatsAppMessage = () => {
     const boloTamanho = localStorage.getItem('boloTamanhoSelecionado') || 'Não informado';
     
@@ -174,15 +168,13 @@ Aguardando confirmação!
 
       const message = generateWhatsAppMessage();
       const encodedMessage = encodeURIComponent(message);
-      const whatsappNumber = '5579981468281'; // Com +55
+      const whatsappNumber = '5579981468281'; 
       
       let whatsappUrl: string;
       
       if (isMobile()) {
-        // Mobile
         whatsappUrl = `whatsapp://send?phone=${whatsappNumber}&text=${encodedMessage}`;
       } else {
-        // Desktop
         whatsappUrl = `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMessage}`;
       }
 
@@ -358,7 +350,6 @@ Aguardando confirmação!
         }
       };
 
-      // Garantir que firstName e lastName não estão vazios (usado em PIX e Cartão)
       const nameParts = customerData.nomeCompleto.trim().split(' ').filter(part => part.length > 0);
       const firstName = nameParts[0] || 'Cliente';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Sabor à Vida';
@@ -413,7 +404,6 @@ Aguardando confirmação!
         if (pixResponse.data.success) {
           console.log('Pix gerado com sucesso:', pixResponse.data);
           
-          // Salvar dados do PIX e ir para tela de QR code
           setPixData(pixResponse.data);
           setCurrentStep(5);
           onConfirmPayment(formData);
@@ -1370,7 +1360,6 @@ Aguardando confirmação!
             {currentStep === 5 && pixData && (
               <div className="space-y-8">
                 {paymentApproved ? (
-                  // Tela de pagamento aprovado
                   <div className="text-center py-8">
                     <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                       <CheckCircle className="w-12 h-12 text-green-600" />
@@ -1401,7 +1390,6 @@ Aguardando confirmação!
                     </p>
                   </div>
                 ) : (
-                  // Tela de QR Code PIX
                   <>
                 <div className="text-center">
                   <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">

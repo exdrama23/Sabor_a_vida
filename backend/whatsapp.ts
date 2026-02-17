@@ -39,15 +39,15 @@ export function generateOrderMessage(order: OrderData): string {
 
   const paymentInfo =
     order.paymentStatus === 'APPROVED'
-      ? `✅ *Pagamento Aprovado* (${order.paymentMethod})`
-      : `⏳ *Aguardando Confirmação de Pagamento* (${order.paymentMethod})`;
+      ? `*Pagamento Aprovado* (${order.paymentMethod})`
+      : `*Aguardando Confirmação de Pagamento* (${order.paymentMethod})`;
 
   const cardInfo = order.cardLastFour ? `\nCartão: •••• ${order.cardLastFour}` : '';
   const installmentInfo =
     order.installments && order.installments > 1 ? `\n${order.installments}x de R$ ${(order.totalPrice / order.installments).toFixed(2)}` : '';
 
   const message = `
-*🎂 PEDIDO CONFIRMADO - Sabor à Vida*
+*PEDIDO CONFIRMADO - Sabor à Vida*
 
 *DADOS PESSOAIS*
 Nome: ${order.customerName}
@@ -78,8 +78,8 @@ ${paymentInfo}${cardInfo}${installmentInfo}
 
 ${
   order.paymentStatus === 'APPROVED'
-    ? '✅ Pagamento confirmado! Seu pedido será preparado em breve.'
-    : '⏳ Aguardando confirmação do pagamento para iniciar o preparo.'
+    ? 'Pagamento confirmado! Seu pedido será preparado em breve.'
+    : 'Aguardando confirmação do pagamento para iniciar o preparo.'
 }
 
 _Obrigado por escolher Sabor à Vida!_

@@ -9,6 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/admins'
+export type * from './models/refresh_tokens'
 export type * from './models/products'
 export type * from './models/orders'
 export type * from './models/payments'

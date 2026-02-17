@@ -1,7 +1,7 @@
-// pages/admin/AdicionarBolo.tsx
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
 import api from '../../axiosInstance';
+import { useAdminCache } from '../../contexts/AdminCacheContext';
 
 interface BoloForm {
   name: string;
@@ -18,6 +18,8 @@ interface AdicionarBoloProps {
 }
 
 const AdicionarBolo = ({ onNavigate }: AdicionarBoloProps) => {
+  const { invalidateProducts } = useAdminCache();
+  
   const [formData, setFormData] = useState<BoloForm>({
     name: '',
     category: 'chocolate',
@@ -86,8 +88,11 @@ const AdicionarBolo = ({ onNavigate }: AdicionarBoloProps) => {
     }
 
     try {
-      await api.post('/product', submitData);
-      setMessage('✅ Produto adicionado com sucesso!');
+      const response = await api.post('/product', submitData);
+      if (response.data) {
+        invalidateProducts();
+      }
+      setMessage('Produto adicionado com sucesso!');
       setTimeout(() => {
         setFormData({
           name: '',
@@ -107,7 +112,7 @@ const AdicionarBolo = ({ onNavigate }: AdicionarBoloProps) => {
       }, 2000);
     } catch (error) {
       console.error('Erro ao adicionar produto:', error);
-      setMessage('❌ Erro ao adicionar produto');
+      setMessage('Erro ao adicionar produto');
     } finally {
       setLoading(false);
     }
@@ -120,7 +125,7 @@ const AdicionarBolo = ({ onNavigate }: AdicionarBoloProps) => {
 
         {message && (
           <div className={`mb-6 p-4 rounded-lg ${
-            message.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+            message.includes('ok') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
           }`}>
             {message}
           </div>

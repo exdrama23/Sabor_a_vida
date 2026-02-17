@@ -9,7 +9,6 @@ const Header = ({ isMenuOpen: externalMenuOpen, setIsMenuOpen: externalSetMenuOp
   const navigate = useNavigate();
   const [internalMenuOpen, setInternalMenuOpen] = useState(false);
 
-  // Use internal state if no props provided
   const isMenuOpen = externalMenuOpen !== undefined ? externalMenuOpen : internalMenuOpen;
   const setIsMenuOpen = externalSetMenuOpen || setInternalMenuOpen;
   const cartCount = cartItems.length;

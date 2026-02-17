@@ -6,12 +6,13 @@ import ListaBolos from './ListaBolos';
 import AdminDashboard from './Dashboard';
 import Logs from './Logs';
 import Pedidos from './Pedidos';
+import { AdminCacheProvider } from '../../contexts/AdminCacheContext';
 
 type Panel = 'adicionar' | 'dashboard' | 'lista' | 'logs' | 'pedidos' | 'config' | `editar:${string}`;
 
-const AdminLayout = () => {
+const AdminLayoutContent = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedPanel, setSelectedPanel] = useState<Panel>('adicionar');
+  const [selectedPanel, setSelectedPanel] = useState<Panel>('dashboard');
 
   const handleNavigate = (panel: string) => {
     setSelectedPanel(panel as Panel);
@@ -53,6 +54,14 @@ const AdminLayout = () => {
         </div>
       </main>
     </div>
+  );
+};
+
+const AdminLayout = () => {
+  return (
+    <AdminCacheProvider>
+      <AdminLayoutContent />
+    </AdminCacheProvider>
   );
 };
 

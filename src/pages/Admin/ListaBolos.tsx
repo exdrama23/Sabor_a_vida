@@ -1,8 +1,8 @@
-// pages/admin/ListaBolos.tsx
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Edit, Trash2, Search } from 'lucide-react';
 import api from '../../axiosInstance';
 import { getProductImageUrl } from '../../types';
+import { useProducts } from '../../contexts/AdminCacheContext';
 
 interface Product {
   id: string;
@@ -19,42 +19,30 @@ interface ListaBolosProps {
 }
 
 const ListaBolos = ({ onNavigate }: ListaBolosProps) => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  const { products, initialLoading, removeProduct, invalidate } = useProducts();
 
-  useEffect(() => {
-    const filtered = products.filter(product =>
+  const filteredProducts = useMemo(() => {
+    return products.filter((product: Product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.category.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    setFilteredProducts(filtered);
   }, [searchTerm, products]);
-
-  const fetchProducts = async () => {
-    try {
-      const response = await api.get('/product');
-      setProducts(response.data || []);
-    } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/product/${id}`);
-      setProducts(products.filter(p => p.id !== id));
+      const token = localStorage.getItem('accessToken');
+      await api.delete(`/product/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      removeProduct(id);
       setDeleteConfirm(null);
     } catch (error) {
       console.error('Erro ao deletar produto:', error);
+      alert('Erro ao deletar produto');
+      invalidate();
     }
   };
 
@@ -104,7 +92,7 @@ const ListaBolos = ({ onNavigate }: ListaBolosProps) => {
           </div>
         </div>
 
-        {loading ? (
+        {initialLoading && products.length === 0 ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600"></div>
             <p className="text-stone-500 mt-4">Carregando produtos...</p>

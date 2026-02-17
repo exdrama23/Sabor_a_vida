@@ -1,20 +1,12 @@
-// pages/admin/Dashboard.tsx
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { TrendingUp, ShoppingBag, DollarSign, Package, RefreshCw } from 'lucide-react';
-import api from '../../axiosInstance';
-
-interface Stats {
-  totalProducts: number;
-  totalOrders: number;
-  totalRevenue: number;
-  pendingOrders: number;
-}
+import { useDashboardData } from '../../contexts/AdminCacheContext';
 
 interface Order {
   id: string;
   customerName: string;
   totalPrice: number;
-  deliveryStatus: string;
+  deliveryStatus?: string;
   created_at?: string;
 }
 
@@ -26,62 +18,28 @@ interface Product {
 }
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState<Stats>({
-    totalProducts: 0,
-    totalOrders: 0,
-    totalRevenue: 0,
-    pendingOrders: 0,
-  });
-  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const { products, orders, initialLoading, refetch, lastUpdate } = useDashboardData();
 
-  useEffect(() => {
-    fetchDashboardData();
-    // Polling a cada 30 segundos
-    const interval = setInterval(() => {
-      fetchDashboardData();
-    }, 30000);
+  const stats = useMemo(() => {
+    const totalRevenue = orders.reduce((sum: number, order: Order) => 
+      sum + (Number(order.totalPrice) || 0), 0
+    );
 
-    return () => clearInterval(interval);
-  }, []);
+    return {
+      totalProducts: products.length,
+      totalOrders: orders.length,
+      totalRevenue,
+      pendingOrders: orders.filter((o: Order) => o.deliveryStatus === 'PENDING').length,
+    };
+  }, [products, orders]);
 
-  const fetchDashboardData = async () => {
-    try {
-      const [productsRes, ordersRes] = await Promise.all([
-        api.get('/product'),
-        api.get('/orders')
-      ]);
+  const recentOrders = useMemo(() => {
+    return orders.slice(0, 5);
+  }, [orders]);
 
-      const products = productsRes.data || [];
-      const orders = ordersRes.data || [];
-
-      const totalRevenue = orders.reduce((sum: number, order: any) => 
-        sum + (Number(order.totalPrice) || 0), 0
-      );
-
-      setStats({
-        totalProducts: products.length,
-        totalOrders: orders.length,
-        totalRevenue,
-        pendingOrders: orders.filter((o: any) => o.deliveryStatus === 'PENDING').length,
-      });
-
-      // Últimas atividades (últimos 5 pedidos)
-      setRecentOrders(orders.slice(0, 5));
-
-      // Produtos em destaque
-      const featured = products.filter((p: any) => p.featured).slice(0, 5);
-      setFeaturedProducts(featured);
-
-      setLastUpdate(new Date());
-    } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const featuredProducts = useMemo(() => {
+    return products.filter((p: Product) => p.featured).slice(0, 5);
+  }, [products]);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
@@ -122,30 +80,34 @@ const AdminDashboard = () => {
     },
   ];
 
+  const showLoading = initialLoading && products.length === 0 && orders.length === 0;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold text-stone-800">Dashboard</h1>
         <div className="flex items-center gap-3 text-xs text-stone-500">
           <button
-            onClick={fetchDashboardData}
+            onClick={refetch}
             className="p-2 hover:bg-stone-100 rounded-lg transition-colors"
             title="Atualizar agora"
           >
             <RefreshCw className="w-5 h-5" />
           </button>
-          <span>Atualizado: {lastUpdate.toLocaleTimeString('pt-BR')}</span>
+          <span>
+            Atualizado: {lastUpdate.products?.toLocaleTimeString('pt-BR') || lastUpdate.orders?.toLocaleTimeString('pt-BR') || '-'}
+          </span>
         </div>
       </div>
 
-      {loading && (
+      {showLoading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600"></div>
           <p className="text-stone-500 mt-4">Carregando dashboard...</p>
         </div>
       )}
 
-      {!loading && (
+      {!showLoading && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {cards.map((card, index) => (
@@ -174,15 +136,15 @@ const AdminDashboard = () => {
                   <div className="flex justify-between items-start mb-1">
                         <p className="font-medium text-stone-800 text-sm">{order.customerName}</p>
                         <span className={`text-xs px-2 py-1 rounded-full ${
-                          order.deliveryStatus === 'COMPLETED' 
+                          order.deliveryStatus === 'DELIVERED' 
                             ? 'bg-green-100 text-green-700'
                             : 'bg-yellow-100 text-yellow-700'
                         }`}>
-                          {order.deliveryStatus === 'COMPLETED' ? '✓ Concluído' : '⏳ Pendente'}
+                          {order.deliveryStatus === 'DELIVERED' ? 'Entregue' : 'Pendente'}
                         </span>
                       </div>
                       <p className="text-xs text-stone-500">
-                        R$ {order.totalPrice.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        R$ {Number(order.totalPrice).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                       <p className="text-xs text-stone-400 mt-1">
                         {formatDate(order.created_at)}
@@ -208,7 +170,7 @@ const AdminDashboard = () => {
                           R$ {product.price?.toFixed(2).replace('.', ',')}
                         </span>
                       </div>
-                      <p className="text-xs text-stone-500 mt-1">⭐ Marcado como destaque</p>
+                      <p className="text-xs text-stone-500 mt-1">Marcado como destaque</p>
                     </div>
                   ))}
                 </div>

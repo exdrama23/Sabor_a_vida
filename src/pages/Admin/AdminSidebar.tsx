@@ -10,6 +10,7 @@ import {
   Info,
   ShoppingBag
 } from 'lucide-react';
+import { logout } from '../../axiosInstance';
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -25,14 +26,13 @@ const AdminSidebar = ({ isOpen, onClose, selected, onSelect }: AdminSidebarProps
     { id: 'lista', icon: List, label: 'Lista de Bolos' },
     { id: 'pedidos', icon: ShoppingBag, label: 'Pedidos' },
     { id: 'logs', icon: Logs, label: 'Logs' },
-    { id: 'config', icon: Settings, label: 'Configurações' },
   ];
 
   const publicNavItems = [
-    { id: 'home', icon: Home, label: 'Início', divider: true },
+    { id: 'home', icon: Home, label: 'Início' },
     { id: 'produtos', icon: Package, label: 'Produtos' },
-    { id: 'sobre', icon: Info, label: 'Sobre' },
     { id: 'carrinho', icon: ShoppingBag, label: 'Carrinho' },
+    { id: 'sobre', icon: Info, label: 'Sobre' },
   ];
 
   const handleItemClick = (itemId: string) => {
@@ -66,14 +66,16 @@ const AdminSidebar = ({ isOpen, onClose, selected, onSelect }: AdminSidebarProps
         transition-transform duration-300 z-50
         w-64 lg:w-72
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        overflow-y-auto
+        flex flex-col
       `}>
-        <div className="p-6 border-b border-stone-200">
+        {/* Cabeçalho - Fixo no topo */}
+        <div className="p-6 border-b border-stone-200 flex-shrink-0">
           <h2 className="text-2xl font-bold text-stone-800">Admin</h2>
           <p className="text-sm text-stone-500 mt-1">Painel de Controle</p>
         </div>
 
-        <nav className="p-4">
+        {/* Navegação - Rolável */}
+        <nav className="flex-1 overflow-y-auto p-4">
           {/* Admin Navigation */}
           <ul className="space-y-2">
             {navItems.map((item) => (
@@ -120,8 +122,21 @@ const AdminSidebar = ({ isOpen, onClose, selected, onSelect }: AdminSidebarProps
           </ul>
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-stone-200 bg-white">
-          <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-stone-600 hover:bg-stone-50 transition-colors">
+        {/* Botões inferiores - Fixos no rodapé */}
+        <div className="border-t border-stone-200 bg-white p-4 flex-shrink-0">
+          
+          {/* Sair */}
+          <button 
+            onClick={async () => {
+              try {
+                await logout();
+              } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+              }
+              window.location.href = '/';
+            }}
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-stone-600 hover:bg-stone-50 transition-colors hover:text-rose-600"
+          >
             <LogOut className="w-5 h-5" />
             <span className="font-medium">Sair</span>
           </button>
