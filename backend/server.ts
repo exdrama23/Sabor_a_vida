@@ -32,7 +32,7 @@ app.use(cors({
     origin: function(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
         if (!origin) return callback(null, true);
 
-        if (['http://localhost:2923', 'http://localhost:5173', 'https://wealthy-courtney-sabor-a-vida-f6291b31.koyeb.app'].includes(origin)) {
+        if (['http://localhost:2923', 'http://localhost:5173', 'https://wealthy-courtney-sabor-a-vida-f6291b31.koyeb.app', 'https://sabor-a-vida.onrender.com'].includes(origin)) {
             return callback(null, true);
         } else {
             return callback(null, false);
