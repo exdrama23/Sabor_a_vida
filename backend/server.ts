@@ -29,7 +29,7 @@ const port = process.env.PORT || 2923;
 const server = http.createServer(app);
 app.set('trust proxy', 1);
 app.use(cors({
-    origin: function(origin, callback) {
+    origin: function(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
         if (!origin) return callback(null, true);
 
         if (['http://localhost:2923', 'http://localhost:5173', 'https://wealthy-courtney-sabor-a-vida-f6291b31.koyeb.app'].includes(origin)) {
@@ -83,7 +83,7 @@ function jwtValidate(req: Request & {admin?: object}, res: Response, next: NextF
 
 const router = express.Router();
 
-router.post('/loginadmin', async(req, res)=>{
+router.post('/loginadmin', async(req: Request, res: Response)=>{
     try {
         const {email, password} = req.body;
 
@@ -99,7 +99,7 @@ router.post('/loginadmin', async(req, res)=>{
     }
 })
 
-router.get('/product/image/:id', async(req, res)=>{
+router.get('/product/image/:id', async(req: Request, res: Response)=>{
     try {
         const id = req.params.id as string;
 
@@ -145,7 +145,7 @@ router.get('/product/image/:id', async(req, res)=>{
     }
 })
 
-router.get('/product', async(req, res)=>{
+router.get('/product', async(req: Request, res: Response)=>{
     try {
         const products = await prisma.products.findMany({
             orderBy: {created_at: 'desc'},
@@ -164,7 +164,7 @@ router.get('/product', async(req, res)=>{
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-router.post('/product', jwtValidate, upload.single('image_file'), async(req, res)=>{
+router.post('/product', jwtValidate, upload.single('image_file'), async(req: Request, res: Response)=>{
      try {
         const {name, category, description, price, featured, size} = req.body;
         
@@ -220,7 +220,7 @@ router.post('/product', jwtValidate, upload.single('image_file'), async(req, res
     }
 })
 
-router.put('/product/:id', jwtValidate, upload.single('image_file'), async (req, res) => {
+router.put('/product/:id', jwtValidate, upload.single('image_file'), async (req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
         const { name, category, description, price, featured, size } = req.body;
@@ -263,7 +263,7 @@ router.put('/product/:id', jwtValidate, upload.single('image_file'), async (req,
     }
 });
 
-router.delete('/product/:id', jwtValidate, async(req, res)=>{
+router.delete('/product/:id', jwtValidate, async(req: Request, res: Response)=>{
     try {
         const id = req.params.id as string;
         await prisma.products.delete({where: {id}});
@@ -275,7 +275,7 @@ router.delete('/product/:id', jwtValidate, async(req, res)=>{
     }
 })
 
-router.post('/payment/card', async(req, res) => {
+router.post('/payment/card', async(req: Request, res: Response) => {
     try {
         const { 
             amount, 
@@ -406,7 +406,7 @@ router.post('/payment/card', async(req, res) => {
     }
 });
 
-router.post('/payment/pix', async(req, res) => {
+router.post('/payment/pix', async(req: Request, res: Response) => {
     try {
         const { 
             amount, 
@@ -554,7 +554,7 @@ router.post('/payment/pix', async(req, res) => {
     }
 });
 
-router.post('/payment/card-token', async(req, res) => {
+router.post('/payment/card-token', async(req: Request, res: Response) => {
     try {
         const { cardNumber, cardHolder, expirationMonth, expirationYear, securityCode } = req.body;
 
@@ -574,7 +574,7 @@ router.post('/payment/card-token', async(req, res) => {
     }
 });
 
-router.post('/webhook/mercadopago', async(req, res) => {
+router.post('/webhook/mercadopago', async(req: Request, res: Response) => {
     try {
         console.log('=== WEBHOOK MERCADO PAGO RECEBIDO ===');
         console.log('Headers:', JSON.stringify(req.headers, null, 2));
@@ -750,7 +750,7 @@ router.post('/webhook/mercadopago', async(req, res) => {
 });
 
 // Novo endpoint para salvar pedido
-router.post('/order', async(req, res) => {
+router.post('/order', async(req: Request, res: Response) => {
     try {
         const {
             customerName,
@@ -820,9 +820,9 @@ router.post('/order', async(req, res) => {
 });
 
 
-router.get('/order/:externalReference/whatsapp-link', async(req, res) => {
+router.get('/order/:externalReference/whatsapp-link', async(req: Request, res: Response) => {
     try {
-        const { externalReference } = req.params;
+        const externalReference = req.params.externalReference as string;
 
         const order = await prisma.orders.findUnique({
             where: { externalReference }
@@ -870,7 +870,7 @@ router.get('/order/:externalReference/whatsapp-link', async(req, res) => {
 });
 
 // Listar todos os pedidos
-router.get('/orders', async(req, res) => {
+router.get('/orders', async(req: Request, res: Response) => {
     try {
         const orders = await prisma.orders.findMany({
             orderBy: { created_at: 'desc' }
@@ -883,7 +883,7 @@ router.get('/orders', async(req, res) => {
 });
 
 // Listar todos os pagamentos
-router.get('/payments', async(req, res) => {
+router.get('/payments', async(req: Request, res: Response) => {
     try {
         const payments = await prisma.payments.findMany({
             orderBy: { created_at: 'desc' }
@@ -896,7 +896,7 @@ router.get('/payments', async(req, res) => {
 });
 
 // Marcar pedido como concluído (atualiza o status do pagamento para APPROVED)
-router.put('/order/:id/complete', jwtValidate, async(req, res) => {
+router.put('/order/:id/complete', jwtValidate, async(req: Request, res: Response) => {
     try {
         const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
@@ -916,7 +916,7 @@ router.put('/order/:id/complete', jwtValidate, async(req, res) => {
 });
 
 // Deletar logs com mais de 1 ano
-router.delete('/logs/cleanup', jwtValidate, async(req, res) => {
+router.delete('/logs/cleanup', jwtValidate, async(req: Request, res: Response) => {
     try {
         const oneYearAgo = new Date();
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
@@ -953,7 +953,7 @@ router.delete('/logs/cleanup', jwtValidate, async(req, res) => {
 
 app.use('/api', router);
 
-if (isProd) app.get(/.*/, (req, res) => res.sendFile(path.join(frontend, '/index.html')));
+if (isProd) app.get(/.*/, (req: Request, res: Response) => res.sendFile(path.join(frontend, '/index.html')));
 
 console.log(frontend)
 console.log(isProd)
