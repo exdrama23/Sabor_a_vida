@@ -45,6 +45,7 @@ export type ProductsMinAggregateOutputType = {
   description: string | null
   size: $Enums.ProductSize | null
   image: runtime.Bytes | null
+  imageUrl: string | null
 }
 
 export type ProductsMaxAggregateOutputType = {
@@ -58,6 +59,7 @@ export type ProductsMaxAggregateOutputType = {
   description: string | null
   size: $Enums.ProductSize | null
   image: runtime.Bytes | null
+  imageUrl: string | null
 }
 
 export type ProductsCountAggregateOutputType = {
@@ -71,6 +73,7 @@ export type ProductsCountAggregateOutputType = {
   description: number
   size: number
   image: number
+  imageUrl: number
   _all: number
 }
 
@@ -94,6 +97,7 @@ export type ProductsMinAggregateInputType = {
   description?: true
   size?: true
   image?: true
+  imageUrl?: true
 }
 
 export type ProductsMaxAggregateInputType = {
@@ -107,6 +111,7 @@ export type ProductsMaxAggregateInputType = {
   description?: true
   size?: true
   image?: true
+  imageUrl?: true
 }
 
 export type ProductsCountAggregateInputType = {
@@ -120,6 +125,7 @@ export type ProductsCountAggregateInputType = {
   description?: true
   size?: true
   image?: true
+  imageUrl?: true
   _all?: true
 }
 
@@ -219,7 +225,8 @@ export type ProductsGroupByOutputType = {
   updated_at: Date
   description: string | null
   size: $Enums.ProductSize
-  image: runtime.Bytes
+  image: runtime.Bytes | null
+  imageUrl: string | null
   _count: ProductsCountAggregateOutputType | null
   _avg: ProductsAvgAggregateOutputType | null
   _sum: ProductsSumAggregateOutputType | null
@@ -255,7 +262,8 @@ export type productsWhereInput = {
   updated_at?: Prisma.DateTimeFilter<"products"> | Date | string
   description?: Prisma.StringNullableFilter<"products"> | string | null
   size?: Prisma.EnumProductSizeFilter<"products"> | $Enums.ProductSize
-  image?: Prisma.BytesFilter<"products"> | runtime.Bytes
+  image?: Prisma.BytesNullableFilter<"products"> | runtime.Bytes | null
+  imageUrl?: Prisma.StringNullableFilter<"products"> | string | null
 }
 
 export type productsOrderByWithRelationInput = {
@@ -268,7 +276,8 @@ export type productsOrderByWithRelationInput = {
   updated_at?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   size?: Prisma.SortOrder
-  image?: Prisma.SortOrder
+  image?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
 }
 
 export type productsWhereUniqueInput = Prisma.AtLeast<{
@@ -284,7 +293,8 @@ export type productsWhereUniqueInput = Prisma.AtLeast<{
   updated_at?: Prisma.DateTimeFilter<"products"> | Date | string
   description?: Prisma.StringNullableFilter<"products"> | string | null
   size?: Prisma.EnumProductSizeFilter<"products"> | $Enums.ProductSize
-  image?: Prisma.BytesFilter<"products"> | runtime.Bytes
+  image?: Prisma.BytesNullableFilter<"products"> | runtime.Bytes | null
+  imageUrl?: Prisma.StringNullableFilter<"products"> | string | null
 }, "id">
 
 export type productsOrderByWithAggregationInput = {
@@ -297,7 +307,8 @@ export type productsOrderByWithAggregationInput = {
   updated_at?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   size?: Prisma.SortOrder
-  image?: Prisma.SortOrder
+  image?: Prisma.SortOrderInput | Prisma.SortOrder
+  imageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.productsCountOrderByAggregateInput
   _avg?: Prisma.productsAvgOrderByAggregateInput
   _max?: Prisma.productsMaxOrderByAggregateInput
@@ -318,7 +329,8 @@ export type productsScalarWhereWithAggregatesInput = {
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"products"> | Date | string
   description?: Prisma.StringNullableWithAggregatesFilter<"products"> | string | null
   size?: Prisma.EnumProductSizeWithAggregatesFilter<"products"> | $Enums.ProductSize
-  image?: Prisma.BytesWithAggregatesFilter<"products"> | runtime.Bytes
+  image?: Prisma.BytesNullableWithAggregatesFilter<"products"> | runtime.Bytes | null
+  imageUrl?: Prisma.StringNullableWithAggregatesFilter<"products"> | string | null
 }
 
 export type productsCreateInput = {
@@ -331,7 +343,8 @@ export type productsCreateInput = {
   updated_at?: Date | string
   description?: string | null
   size: $Enums.ProductSize
-  image: runtime.Bytes
+  image?: runtime.Bytes | null
+  imageUrl?: string | null
 }
 
 export type productsUncheckedCreateInput = {
@@ -344,7 +357,8 @@ export type productsUncheckedCreateInput = {
   updated_at?: Date | string
   description?: string | null
   size: $Enums.ProductSize
-  image: runtime.Bytes
+  image?: runtime.Bytes | null
+  imageUrl?: string | null
 }
 
 export type productsUpdateInput = {
@@ -357,7 +371,8 @@ export type productsUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   size?: Prisma.EnumProductSizeFieldUpdateOperationsInput | $Enums.ProductSize
-  image?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  image?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type productsUncheckedUpdateInput = {
@@ -370,7 +385,8 @@ export type productsUncheckedUpdateInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   size?: Prisma.EnumProductSizeFieldUpdateOperationsInput | $Enums.ProductSize
-  image?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  image?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type productsCreateManyInput = {
@@ -383,7 +399,8 @@ export type productsCreateManyInput = {
   updated_at?: Date | string
   description?: string | null
   size: $Enums.ProductSize
-  image: runtime.Bytes
+  image?: runtime.Bytes | null
+  imageUrl?: string | null
 }
 
 export type productsUpdateManyMutationInput = {
@@ -396,7 +413,8 @@ export type productsUpdateManyMutationInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   size?: Prisma.EnumProductSizeFieldUpdateOperationsInput | $Enums.ProductSize
-  image?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  image?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type productsUncheckedUpdateManyInput = {
@@ -409,7 +427,8 @@ export type productsUncheckedUpdateManyInput = {
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   size?: Prisma.EnumProductSizeFieldUpdateOperationsInput | $Enums.ProductSize
-  image?: Prisma.BytesFieldUpdateOperationsInput | runtime.Bytes
+  image?: Prisma.NullableBytesFieldUpdateOperationsInput | runtime.Bytes | null
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type productsCountOrderByAggregateInput = {
@@ -423,6 +442,7 @@ export type productsCountOrderByAggregateInput = {
   description?: Prisma.SortOrder
   size?: Prisma.SortOrder
   image?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
 }
 
 export type productsAvgOrderByAggregateInput = {
@@ -440,6 +460,7 @@ export type productsMaxOrderByAggregateInput = {
   description?: Prisma.SortOrder
   size?: Prisma.SortOrder
   image?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
 }
 
 export type productsMinOrderByAggregateInput = {
@@ -453,6 +474,7 @@ export type productsMinOrderByAggregateInput = {
   description?: Prisma.SortOrder
   size?: Prisma.SortOrder
   image?: Prisma.SortOrder
+  imageUrl?: Prisma.SortOrder
 }
 
 export type productsSumOrderByAggregateInput = {
@@ -471,8 +493,8 @@ export type EnumProductSizeFieldUpdateOperationsInput = {
   set?: $Enums.ProductSize
 }
 
-export type BytesFieldUpdateOperationsInput = {
-  set?: runtime.Bytes
+export type NullableBytesFieldUpdateOperationsInput = {
+  set?: runtime.Bytes | null
 }
 
 
@@ -488,6 +510,7 @@ export type productsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   description?: boolean
   size?: boolean
   image?: boolean
+  imageUrl?: boolean
 }, ExtArgs["result"]["products"]>
 
 export type productsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -501,6 +524,7 @@ export type productsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   description?: boolean
   size?: boolean
   image?: boolean
+  imageUrl?: boolean
 }, ExtArgs["result"]["products"]>
 
 export type productsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -514,6 +538,7 @@ export type productsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   description?: boolean
   size?: boolean
   image?: boolean
+  imageUrl?: boolean
 }, ExtArgs["result"]["products"]>
 
 export type productsSelectScalar = {
@@ -527,9 +552,10 @@ export type productsSelectScalar = {
   description?: boolean
   size?: boolean
   image?: boolean
+  imageUrl?: boolean
 }
 
-export type productsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "category" | "price" | "featured" | "created_at" | "updated_at" | "description" | "size" | "image", ExtArgs["result"]["products"]>
+export type productsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "category" | "price" | "featured" | "created_at" | "updated_at" | "description" | "size" | "image" | "imageUrl", ExtArgs["result"]["products"]>
 
 export type $productsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "products"
@@ -544,7 +570,8 @@ export type $productsPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     updated_at: Date
     description: string | null
     size: $Enums.ProductSize
-    image: runtime.Bytes
+    image: runtime.Bytes | null
+    imageUrl: string | null
   }, ExtArgs["result"]["products"]>
   composites: {}
 }
@@ -978,6 +1005,7 @@ export interface productsFieldRefs {
   readonly description: Prisma.FieldRef<"products", 'String'>
   readonly size: Prisma.FieldRef<"products", 'ProductSize'>
   readonly image: Prisma.FieldRef<"products", 'Bytes'>
+  readonly imageUrl: Prisma.FieldRef<"products", 'String'>
 }
     
 

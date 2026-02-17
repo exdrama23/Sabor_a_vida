@@ -11,6 +11,7 @@ import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { getWhatsAppMarkupLink, OrderData, sendOrderToWhatsApp } from './whatsapp';
+import { v2 as cloudinary } from 'cloudinary';
 import auth, { 
   authMiddleware, 
   loginRateLimitMiddleware, 
@@ -68,14 +69,52 @@ if (isProd) app.use(express.static(path.join(frontend)));
 
 app.use('/api/uploads', express.static('uploads'));
 
-type ImageCacheEntry = {
-    buffer: Buffer;
-    contentType: string;
-    expiresAt: number;
-};
+async function uploadToCloudinary(buffer: Buffer, productId?: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const uploadOptions: any = {
+            folder: 'sabor_a_vida/produtos',
+            resource_type: 'image',
+            format: 'webp', 
+            quality: 'auto:good',
+            fetch_format: 'auto'
+        };
+        
+        if (productId) {
+            uploadOptions.public_id = productId;
+            uploadOptions.overwrite = true;
+        }
 
-const IMAGE_CACHE_TTL_MS = 1000 * 60 * 60;
-const imageCache = new Map<string, ImageCacheEntry>();
+        const uploadStream = cloudinary.uploader.upload_stream(
+            uploadOptions,
+            (error, result) => {
+                if (error) {
+                    console.error('Erro no upload Cloudinary:', error);
+                    reject(error);
+                } else if (result) {
+                    resolve(result.secure_url);
+                } else {
+                    reject(new Error('Upload sem resultado'));
+                }
+            }
+        );
+        
+        uploadStream.end(buffer);
+    });
+}
+
+async function deleteFromCloudinary(imageUrl: string): Promise<void> {
+    try {
+        const urlParts = imageUrl.split('/');
+        const folderIndex = urlParts.findIndex(p => p === 'sabor_a_vida');
+        if (folderIndex !== -1) {
+            const publicIdWithExt = urlParts.slice(folderIndex).join('/');
+            const publicId = publicIdWithExt.replace(/\.[^/.]+$/, ''); 
+            await cloudinary.uploader.destroy(publicId);
+        }
+    } catch (error) {
+        console.warn('Erro ao deletar imagem do Cloudinary:', error);
+    }
+}
 
 const jwtValidate = authMiddleware;
 
@@ -91,27 +130,27 @@ router.get('/auth/csrf', getCsrfTokenHandler);
 
 router.get('/auth/status', authStatusHandler);
 
-// Rota antiga de login (mantida para compatibilidade)
 router.post('/loginadmin', loginRateLimitMiddleware, loginHandler);
 
 router.get('/product/image/:id', async(req: Request, res: Response)=>{
     try {
         const id = req.params.id as string;
+        const product = await prisma.products.findUnique({ 
+            where: { id },
+            select: { imageUrl: true, image: true }
+        });
 
-        const cached = imageCache.get(id);
-        if (cached && Date.now() < cached.expiresAt) {
-            res.setHeader('Content-Type', cached.contentType);
-            res.setHeader('Content-Length', cached.buffer.length);
-            res.setHeader('Cache-Control', 'public, max-age=3600');
-            return res.send(cached.buffer);
+        if (!product) {
+            return res.status(404).json({error: 'Produto não encontrado'});
         }
 
-        const product = await prisma.products.findUnique({ where: { id } });
+        if (product.imageUrl) {
+            return res.redirect(301, product.imageUrl);
+        }
 
-        if (!product || !product.image) {
+        if (!product.image) {
             return res.status(404).json({error: 'Imagem não encontrada'});
         }
-
 
         let imageBuffer: Buffer;
         if (Buffer.isBuffer(product.image)) {
@@ -122,17 +161,9 @@ router.get('/product/image/:id', async(req: Request, res: Response)=>{
             imageBuffer = Buffer.from(product.image as any);
         }
 
-        const contentType = 'image/jpeg';
-
-        imageCache.set(id, {
-            buffer: imageBuffer,
-            contentType,
-            expiresAt: Date.now() + IMAGE_CACHE_TTL_MS
-        });
-
-        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Type', 'image/jpeg');
         res.setHeader('Content-Length', imageBuffer.length);
-        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('Cache-Control', 'public, max-age=86400'); 
         res.send(imageBuffer);
     } catch (error) {
         console.error('Erro ao buscar imagem:', error)
@@ -146,7 +177,8 @@ router.get('/product', async(req: Request, res: Response)=>{
             orderBy: {created_at: 'desc'},
             omit: {
                 created_at: true, 
-                updated_at: true
+                updated_at: true,
+                image: true 
             }
         })
         res.status(200).json(products);
@@ -182,9 +214,9 @@ router.post('/product', jwtValidate, upload.single('image_file'), async(req: Req
             return res.status(400).json({error: `Tamanho inválido. Use: ${validSizes.join(', ')}`});
         }
 
-        // memoryStorage armazena em buffer, não em path
-        // Converter Buffer para Uint8Array para compatibilidade com Prisma
-        const imageBuffer = new Uint8Array(req.file.buffer);
+        console.log('[Cloudinary] Fazendo upload de nova imagem...');
+        const imageUrl = await uploadToCloudinary(req.file.buffer);
+        console.log('[Cloudinary] Upload concluído:', imageUrl);
         
         const newProduct = await prisma.products.create({
             data: {
@@ -194,20 +226,11 @@ router.post('/product', jwtValidate, upload.single('image_file'), async(req: Req
                 price: parseFloat(price),
                 size: normalizedSize as 'PEQUENO' | 'MEDIO' | 'GRANDE',
                 featured: featured === 'true' || featured === true,
-                image: imageBuffer
+                imageUrl // Salva URL do Cloudinary
             },
-            omit: {created_at: true, updated_at: true}
+            omit: {created_at: true, updated_at: true, image: true}
         });
 
-        try {
-            imageCache.set(newProduct.id, {
-                buffer: Buffer.from(imageBuffer),
-                contentType: 'image/jpeg',
-                expiresAt: Date.now() + IMAGE_CACHE_TTL_MS
-            });
-        } catch (err) {
-            console.warn('Não foi possível armazenar imagem no cache:', err);
-        }
         res.status(201).json(newProduct);
     } catch (error) {
         console.error('Erro ao cadastrar produto:', error)
@@ -229,27 +252,28 @@ router.put('/product/:id', jwtValidate, upload.single('image_file'), async (req:
         if (typeof featured !== 'undefined') updateData.featured = featured === 'true' || featured === true;
 
         if (req.file) {
-            // Converter Buffer para Uint8Array para compatibilidade com Prisma
-            updateData.image = new Uint8Array(req.file.buffer);
+            console.log('[Cloudinary] Atualizando imagem do produto', id);
+
+            const currentProduct = await prisma.products.findUnique({ 
+                where: { id }, 
+                select: { imageUrl: true } 
+            });
+
+            const newImageUrl = await uploadToCloudinary(req.file.buffer, id);
+            updateData.imageUrl = newImageUrl;
+
+            if (currentProduct?.imageUrl) {
+                await deleteFromCloudinary(currentProduct.imageUrl);
+            }
+            
+            console.log('[Cloudinary] Imagem atualizada:', newImageUrl);
         }
 
         const updated = await prisma.products.update({
             where: { id },
             data: updateData,
-            omit: { created_at: true, updated_at: true }
+            omit: { created_at: true, updated_at: true, image: true }
         });
-
-        if (updateData.image) {
-            try {
-                imageCache.set(id, {
-                    buffer: Buffer.from(updateData.image),
-                    contentType: 'image/jpeg',
-                    expiresAt: Date.now() + IMAGE_CACHE_TTL_MS
-                });
-            } catch (err) {
-                console.warn('Não foi possível atualizar cache de imagem:', err);
-            }
-        }
 
         res.status(200).json(updated);
     } catch (error) {
@@ -261,12 +285,93 @@ router.put('/product/:id', jwtValidate, upload.single('image_file'), async (req:
 router.delete('/product/:id', jwtValidate, async(req: Request, res: Response)=>{
     try {
         const id = req.params.id as string;
+        
+        // Busca produto para deletar imagem do Cloudinary
+        const product = await prisma.products.findUnique({ 
+            where: { id }, 
+            select: { imageUrl: true } 
+        });
+        
         await prisma.products.delete({where: {id}});
-        try { imageCache.delete(id); } catch (err) {}
+        
+        // Deleta imagem do Cloudinary
+        if (product?.imageUrl) {
+            await deleteFromCloudinary(product.imageUrl);
+        }
+        
         res.status(200).json({message: 'Removido com sucesso.'});
     } catch (error) {
         console.error('Erro ao remover produto:', error)
         res.status(500).json({error: 'Erro ao remover produto.'})
+    }
+})
+
+router.post('/migrate-images', jwtValidate, async(req: Request, res: Response) => {
+    try {
+        console.log('[Migração] Iniciando migração de imagens para Cloudinary...');
+
+        const products = await prisma.products.findMany({
+            where: {
+                image: { not: null },
+                imageUrl: null
+            },
+            select: { id: true, name: true, image: true }
+        });
+
+        console.log(`[Migração] ${products.length} produtos para migrar`);
+        
+        let migrated = 0;
+        let failed = 0;
+        const errors: string[] = [];
+
+        for (const product of products) {
+            try {
+                if (!product.image) continue;
+                
+                let imageBuffer: Buffer;
+                if (Buffer.isBuffer(product.image)) {
+                    imageBuffer = product.image as Buffer;
+                } else {
+                    imageBuffer = Buffer.from(product.image as any);
+                }
+
+                console.log(`[Migração] Migrando produto: ${product.name} (${product.id})`);
+                
+                const imageUrl = await uploadToCloudinary(imageBuffer, product.id);
+                
+                await prisma.products.update({
+                    where: { id: product.id },
+                    data: { 
+                        imageUrl,
+                        image: null 
+                    }
+                });
+                
+                migrated++;
+                console.log(`[Migração] ✓ Produto migrado: ${product.name}`);
+
+                await new Promise(r => setTimeout(r, 500));
+                
+            } catch (err: any) {
+                failed++;
+                errors.push(`${product.name}: ${err.message}`);
+                console.error(`[Migração] ✗ Erro no produto ${product.name}:`, err.message);
+            }
+        }
+
+        console.log(`[Migração] Concluída! ${migrated} migrados, ${failed} falhas`);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Migração concluída',
+            total: products.length,
+            migrated,
+            failed,
+            errors: errors.length > 0 ? errors : undefined
+        });
+    } catch (error) {
+        console.error('Erro na migração:', error);
+        res.status(500).json({ error: 'Erro ao migrar imagens' });
     }
 })
 
@@ -280,14 +385,13 @@ router.post('/payment/card', async(req: Request, res: Response) => {
             installments,
             description,
             payer,
-            orderData // Novos dados do pedido
+            orderData 
         } = req.body;
 
         if (!amount || !token || !cardHolder || !payer) {
             return res.status(400).json({ error: 'Dados incompletos para o pagamento' });
         }
 
-        // Primeiro, salvar o pedido
         const externalReference = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
         if (orderData) {
@@ -333,17 +437,14 @@ router.post('/payment/card', async(req: Request, res: Response) => {
             paymentMethodId = cardTypeMap[cardType.toLowerCase()] || 'credit_card';
         }
 
-        // Extrair DDD e número do telefone
         const phoneClean = orderData?.customerPhone?.replace(/\D/g, '') || '';
         const phoneAreaCode = phoneClean.slice(0, 2) || '11';
         const phoneNumber = phoneClean.slice(2) || '';
 
-        // URL do webhook baseado no ambiente
         const webhookUrl = isProd 
             ? 'https://sabor-a-vida.onrender.com/api/webhook/mercadopago'
             : 'http://localhost:2923/api/webhook/mercadopago';
 
-        // Preparar items para additional_info
         const items = orderData?.items?.map((item: any, index: number) => ({
             id: item.productId || `item_${index}`,
             title: item.name || 'Produto',
@@ -418,7 +519,6 @@ router.post('/payment/card', async(req: Request, res: Response) => {
         if (paymentData && paymentData.id) {
             console.log('Card payment successful:', paymentData.id, 'Status:', paymentData.status);
 
-            // Se o pagamento foi aprovado imediatamente, atualizar o pedido
             if (paymentData.status === 'approved') {
                 try {
                     await prisma.orders.updateMany({
@@ -466,16 +566,14 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             description, 
             payer,
             externalReference,
-            orderData // Novos dados do pedido
+            orderData
         } = req.body;
 
-        // Log detalhado do payload recebido
         console.log('=== PIX PAYMENT REQUEST ===' );
         console.log('Amount:', amount);
         console.log('Payer:', JSON.stringify(payer, null, 2));
         console.log('OrderData presente:', !!orderData);
 
-        // Validações ANTES de criar o pedido
         if (!amount) {
             console.log('ERRO: amount está vazio ou undefined');
             return res.status(400).json({ error: 'Valor do pagamento é obrigatório', field: 'amount' });
@@ -491,7 +589,6 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             return res.status(400).json({ error: 'CPF é obrigatório para Pix', field: 'cpf' });
         }
 
-        // Validar CPF (11 dígitos)
         const cpfClean = payer.cpf?.replace(/\D/g, '') || '';
         if (cpfClean.length !== 11) {
             console.log('ERRO: CPF inválido, tamanho:', cpfClean.length);
@@ -503,20 +600,17 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             return res.status(400).json({ error: 'Email é obrigatório', field: 'email' });
         }
 
-        // Usar fallback se firstName ou lastName estiverem vazios
         const firstName = (payer.firstName && payer.firstName.trim()) || 'Cliente';
         const lastName = (payer.lastName && payer.lastName.trim()) || 'Sabor a Vida';
         
         console.log('Nome processado: firstName=', firstName, 'lastName=', lastName);
 
-        // Validar valor do pagamento
         const amountParsed = parseFloat(amount);
         if (isNaN(amountParsed) || amountParsed <= 0) {
             console.log('ERRO: amount inválido:', amount);
             return res.status(400).json({ error: 'Valor do pagamento deve ser maior que zero', field: 'amount' });
         }
 
-        // Validar dados numéricos do orderData
         if (orderData) {
             const subtotal = parseFloat(orderData.subtotal);
             const deliveryPrice = parseFloat(orderData.deliveryPrice);
@@ -532,7 +626,6 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
 
         const finalExternalReference = externalReference || `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Salvar o pedido (após validações)
         if (orderData) {
             try {
                 await prisma.orders.create({
@@ -567,17 +660,14 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             }
         }
 
-        // Extrair DDD e número do telefone
         const phoneClean = orderData?.customerPhone?.replace(/\D/g, '') || '';
         const phoneAreaCode = phoneClean.slice(0, 2) || '11';
         const phoneNumber = phoneClean.slice(2) || '';
 
-        // URL do webhook baseado no ambiente
         const webhookUrl = isProd 
             ? 'https://sabor-a-vida.onrender.com/api/webhook/mercadopago'
             : 'http://localhost:2923/api/webhook/mercadopago';
 
-        // Preparar items para additional_info
         const items = orderData?.items?.map((item: any, index: number) => ({
             id: item.productId || `item_${index}`,
             title: item.name || 'Produto',
@@ -653,8 +743,7 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             console.error('Mensagem:', mpError?.message);
             console.error('Causa:', mpError?.cause);
             console.error('Response:', JSON.stringify(mpError?.response?.data || mpError?.cause, null, 2));
-            
-            // Tentar extrair mensagem de erro específica
+
             const errorDetails = mpError?.cause?.[0]?.description 
                 || mpError?.response?.data?.message 
                 || mpError?.message 
@@ -668,22 +757,12 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
         }
 
         if (paymentData && paymentData.id) {
-            // const pixQrCode = (paymentData as any).point_of_interaction?.qr_code?.qr_code || null;
             const transactionData = (paymentData as any).point_of_interaction?.transaction_data;
 
             const qrCode = transactionData?.qr_code || null;
             const qrCodeBase64 = transactionData?.qr_code_base64 || null;
-            console.log('PIX payment successful:', paymentData.id);
+            console.log('PIX payment successful:', paymentData.id, 'Amount:', amountParsed);
 
-            // res.status(200).json({
-            //     success: true,
-            //     paymentId: paymentData.id,
-            //     status: paymentData.status,
-            //     statusDetail: (paymentData as any).status_detail,
-            //     qrCode: pixQrCode,
-            //     pixData: (paymentData as any).point_of_interaction?.qr_code || null,
-            //     orderReference: finalExternalReference
-            // });
             res.status(200).json({
                 success: true,
                 paymentId: paymentData.id,
@@ -691,7 +770,8 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
                 statusDetail: (paymentData as any).status_detail,
                 qrCode,              
                 qrCodeBase64,        
-                orderReference: finalExternalReference
+                orderReference: finalExternalReference,
+                amount: amountParsed
             });
         } else {
             console.error('PIX payment failed:', paymentData);
@@ -703,7 +783,6 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Erro ao processar pagamento Pix:', error);
         
-        // Log detalhado para debug em produção
         if (error?.cause) {
             console.error('Causa do erro:', error.cause);
         }
@@ -721,7 +800,6 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
     }
 });
 
-// Endpoint para verificar status do pedido (usado para polling do frontend)
 router.get('/order/status/:externalReference', async(req: Request, res: Response) => {
     try {
         const externalReference = req.params.externalReference as string;
@@ -786,21 +864,13 @@ router.post('/webhook/mercadopago', async(req: Request, res: Response) => {
         console.log('Body:', JSON.stringify(req.body, null, 2));
         console.log('Query:', JSON.stringify(req.query, null, 2));
 
-        // O Mercado Pago envia webhooks de duas formas:
-        // 1. IPN (Instant Payment Notification) com action e data.id no body
-        // 2. Webhook com type e data.id no body
-        // 3. Query params: ?type=payment&data.id=123
-
-        // Verificar tipo de notificação
         let type = req.body?.type || req.body?.action || req.query?.type;
         let paymentId = req.body?.data?.id || req.query?.['data.id'];
 
-        // Formato alternativo IPN
         if (!paymentId && req.body?.id) {
             paymentId = req.body.id;
         }
 
-        // Formato topic/id (IPN antigo)
         if (!paymentId && req.query?.topic === 'payment' && req.query?.id) {
             paymentId = req.query.id;
             type = 'payment';
@@ -821,7 +891,6 @@ router.post('/webhook/mercadopago', async(req: Request, res: Response) => {
 
         console.log(`=== Processando pagamento ID: ${paymentId} ===`);
 
-        // Buscar dados do pagamento do Mercado Pago usando SDKv2
         let paymentData;
         try {
             paymentData = await paymentClient.get({ id: String(paymentId) });
@@ -847,10 +916,8 @@ router.post('/webhook/mercadopago', async(req: Request, res: Response) => {
             return res.status(200).json({ success: true, message: 'No external reference' });
         }
 
-        // Mapear status do Mercado Pago para status do banco
         const dbStatus = status === 'approved' ? 'APPROVED' : status === 'rejected' ? 'REJECTED' : status === 'cancelled' ? 'CANCELLED' : 'PENDING';
 
-        // Salvar dados do pagamento no banco
         try {
             await prisma.payments.upsert({
                 where: { mercadoPagoId: String(paymentId) },
@@ -889,7 +956,6 @@ router.post('/webhook/mercadopago', async(req: Request, res: Response) => {
             console.error('Erro ao atualizar order no banco:', orderUpdateError);
         }
 
-        // Se pagamento foi aprovado, enviar notificação ao WhatsApp admin
         if (status === 'approved') {
             try {
                 const fullOrder = await prisma.orders.findFirst({
@@ -925,7 +991,6 @@ router.post('/webhook/mercadopago', async(req: Request, res: Response) => {
                         installments: fullOrder.installments || undefined
                     };
 
-                    // Enviar para WhatsApp via Z-API ou Business API (com fallback)
                     const whatsappSent = await sendOrderToWhatsApp(orderData);
                     if (whatsappSent) {
                         console.log('WhatsApp notification sent successfully');
@@ -937,22 +1002,18 @@ router.post('/webhook/mercadopago', async(req: Request, res: Response) => {
                 }
             } catch (whatsappError) {
                 console.error('Erro ao enviar WhatsApp:', whatsappError);
-                // Não falha o webhook por erro no WhatsApp
             }
         } else if (status === 'rejected' || status === 'cancelled') {
             console.log(`Payment ${status}, order marked as failed`);
         }
 
-        // Sempre retornar 200 para confirmar ao Mercado Pago
         res.status(200).json({ success: true });
     } catch (error) {
         console.error('Erro no webhook:', error);
-        // Retornar 200 mesmo em caso de erro (para Mercado Pago não ficar tentando)
         res.status(200).json({ success: false, error: 'Internal error processing webhook' });
     }
 });
 
-// Novo endpoint para salvar pedido
 router.post('/order', async(req: Request, res: Response) => {
     try {
         const {
@@ -985,7 +1046,6 @@ router.post('/order', async(req: Request, res: Response) => {
             return res.status(400).json({ error: 'External reference é obrigatório' });
         }
 
-        // Criar pedido
         const order = await prisma.orders.create({
             data: {
                 externalReference,
@@ -1072,7 +1132,6 @@ router.get('/order/:externalReference/whatsapp-link', async(req: Request, res: R
     }
 });
 
-// Listar todos os pedidos
 router.get('/orders', async(req: Request, res: Response) => {
     try {
         const orders = await prisma.orders.findMany({
@@ -1085,7 +1144,6 @@ router.get('/orders', async(req: Request, res: Response) => {
     }
 });
 
-// Listar todos os pagamentos
 router.get('/payments', async(req: Request, res: Response) => {
     try {
         const payments = await prisma.payments.findMany({
@@ -1098,7 +1156,6 @@ router.get('/payments', async(req: Request, res: Response) => {
     }
 });
 
-// Marcar pedido como concluído/entregue
 router.put('/order/:id/complete', jwtValidate, async(req: Request, res: Response) => {
     try {
         const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -1119,13 +1176,11 @@ router.put('/order/:id/complete', jwtValidate, async(req: Request, res: Response
     }
 });
 
-// Deletar logs com mais de 1 ano
 router.delete('/logs/cleanup', jwtValidate, async(req: Request, res: Response) => {
     try {
         const oneYearAgo = new Date();
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-        // Deletar pagamentos antigos
         const deletedPayments = await prisma.payments.deleteMany({
             where: {
                 created_at: {
@@ -1134,7 +1189,6 @@ router.delete('/logs/cleanup', jwtValidate, async(req: Request, res: Response) =
             }
         });
 
-        // Deletar pedidos antigos
         const deletedOrders = await prisma.orders.deleteMany({
             where: {
                 created_at: {
@@ -1155,7 +1209,309 @@ router.delete('/logs/cleanup', jwtValidate, async(req: Request, res: Response) =
     }
 });
 
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; 
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+async function getCoordinatesFromCep(cep: string): Promise<{lat: number, lng: number} | null> {
+    try {
+        const cepClean = cep.replace(/\D/g, '');
+        
+        const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cepClean}/json/`);
+        const viaCepData = await viaCepResponse.json() as { 
+            erro?: boolean; 
+            logradouro?: string; 
+            bairro?: string; 
+            localidade?: string; 
+            uf?: string; 
+        };
+        
+        if (viaCepData.erro) {
+            console.log('CEP não encontrado no ViaCEP:', cepClean);
+            return null;
+        }
+
+        const address = `${viaCepData.logradouro || ''}, ${viaCepData.bairro || ''}, ${viaCepData.localidade || ''}, ${viaCepData.uf || ''}, Brasil`;
+        const encodedAddress = encodeURIComponent(address);
+        
+        const nominatimResponse = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`,
+            {
+                headers: {
+                    'User-Agent': 'SaborAVida-DeliveryCalc/1.0'
+                }
+            }
+        );
+        
+        const nominatimData = await nominatimResponse.json() as Array<{ lat: string; lon: string }>;
+        
+        if (nominatimData && nominatimData.length > 0) {
+            return {
+                lat: parseFloat(nominatimData[0].lat),
+                lng: parseFloat(nominatimData[0].lon)
+            };
+        }
+
+        const cityAddress = `${viaCepData.localidade || ''}, ${viaCepData.uf || ''}, Brasil`;
+        const cityResponse = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityAddress)}&limit=1`,
+            {
+                headers: {
+                    'User-Agent': 'SaborAVida-DeliveryCalc/1.0'
+                }
+            }
+        );
+        
+        const cityData = await cityResponse.json() as Array<{ lat: string; lon: string }>;
+        
+        if (cityData && cityData.length > 0) {
+            return {
+                lat: parseFloat(cityData[0].lat),
+                lng: parseFloat(cityData[0].lon)
+            };
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Erro ao buscar coordenadas:', error);
+        return null;
+    }
+}
+
+router.get('/delivery/config', async(req: Request, res: Response) => {
+    try {
+        const config = await prisma.delivery_config.findFirst({
+            where: { isActive: true },
+            include: {
+                delivery_ranges: {
+                    orderBy: { minKm: 'asc' }
+                }
+            }
+        });
+
+        res.status(200).json({ 
+            success: true, 
+            config: config || null 
+        });
+    } catch (error) {
+        console.error('Erro ao buscar config de frete:', error);
+        res.status(500).json({ error: 'Erro ao buscar configuração de frete' });
+    }
+});
+
+router.post('/delivery/config', jwtValidate, async(req: Request, res: Response) => {
+    try {
+        const { 
+            originCep, 
+            originAddress, 
+            originNumber,
+            originNeighborhood, 
+            originCity, 
+            originState,
+            ranges 
+        } = req.body;
+
+        if (!originCep || !originAddress || !originCity || !originState) {
+            return res.status(400).json({ error: 'Dados de endereço incompletos' });
+        }
+
+        if (!ranges || !Array.isArray(ranges) || ranges.length === 0) {
+            return res.status(400).json({ error: 'Faixas de preço são obrigatórias' });
+        }
+
+        const coords = await getCoordinatesFromCep(originCep);
+
+        await prisma.delivery_config.updateMany({
+            where: { isActive: true },
+            data: { isActive: false }
+        });
+
+        const newConfig = await prisma.delivery_config.create({
+            data: {
+                originCep: originCep.replace(/\D/g, ''),
+                originAddress,
+                originNumber: originNumber || 'S/N',
+                originNeighborhood: originNeighborhood || '',
+                originCity,
+                originState,
+                originLat: coords?.lat || null,
+                originLng: coords?.lng || null,
+                isActive: true,
+                delivery_ranges: {
+                    create: ranges.map((range: any) => ({
+                        minKm: parseFloat(range.minKm),
+                        maxKm: parseFloat(range.maxKm),
+                        price: parseFloat(range.price)
+                    }))
+                }
+            },
+            include: {
+                delivery_ranges: {
+                    orderBy: { minKm: 'asc' }
+                }
+            }
+        });
+
+        console.log('Config de frete criada:', newConfig.id, 'Coords:', coords);
+
+        res.status(200).json({ 
+            success: true, 
+            config: newConfig,
+            message: 'Configuração de frete salva com sucesso'
+        });
+    } catch (error) {
+        console.error('Erro ao salvar config de frete:', error);
+        res.status(500).json({ error: 'Erro ao salvar configuração de frete' });
+    }
+});
+
+router.post('/delivery/calculate', async(req: Request, res: Response) => {
+    try {
+        const { cep } = req.body;
+
+        if (!cep) {
+            return res.status(400).json({ error: 'CEP é obrigatório' });
+        }
+
+        const config = await prisma.delivery_config.findFirst({
+            where: { isActive: true },
+            include: {
+                delivery_ranges: {
+                    orderBy: { minKm: 'asc' }
+                }
+            }
+        });
+
+        if (!config) {
+            return res.status(200).json({ 
+                success: true, 
+                deliveryPrice: 0,
+                distance: null,
+                noConfig: true,
+                message: 'Configure o frete na área administrativa'
+            });
+        }
+
+        let originLat = config.originLat ? Number(config.originLat) : null;
+        let originLng = config.originLng ? Number(config.originLng) : null;
+
+        if (!originLat || !originLng) {
+            const originCoords = await getCoordinatesFromCep(config.originCep);
+            if (originCoords) {
+                originLat = originCoords.lat;
+                originLng = originCoords.lng;
+
+                await prisma.delivery_config.update({
+                    where: { id: config.id },
+                    data: { 
+                        originLat: originCoords.lat, 
+                        originLng: originCoords.lng 
+                    }
+                });
+            }
+        }
+
+        if (!originLat || !originLng) {
+            return res.status(200).json({ 
+                success: true, 
+                deliveryPrice: 0,
+                distance: null,
+                message: 'Não foi possível calcular distância - frete grátis'
+            });
+        }
+
+        const destCoords = await getCoordinatesFromCep(cep);
+
+        if (!destCoords) {
+            return res.status(200).json({ 
+                success: true, 
+                deliveryPrice: 0,
+                distance: null,
+                message: 'CEP de destino não encontrado - frete grátis'
+            });
+        }
+
+        const distance = haversineDistance(
+            originLat, 
+            originLng, 
+            destCoords.lat, 
+            destCoords.lng
+        );
+
+        console.log('Cálculo de frete - Origem:', originLat, originLng, 'Destino:', destCoords, 'Distância:', distance.toFixed(2), 'km');
+
+        let deliveryPrice = 0;
+        let rangeFound = false;
+
+        for (const range of config.delivery_ranges) {
+            const minKm = Number(range.minKm);
+            const maxKm = Number(range.maxKm);
+            const price = Number(range.price);
+
+            if (distance >= minKm && distance < maxKm) {
+                deliveryPrice = price;
+                rangeFound = true;
+                break;
+            }
+        }
+
+        if (!rangeFound && config.delivery_ranges.length > 0) {
+            const lastRange = config.delivery_ranges[config.delivery_ranges.length - 1];
+            const maxConfiguredKm = Number(lastRange.maxKm);
+            
+            if (distance >= maxConfiguredKm) {
+                return res.status(200).json({ 
+                    success: true, 
+                    deliveryPrice: -1, 
+                    distance: parseFloat(distance.toFixed(2)),
+                    outOfRange: true,
+                    message: `Fora da área de entrega (${distance.toFixed(1)} km). Máximo: ${maxConfiguredKm} km`
+                });
+            }
+            deliveryPrice = Number(lastRange.price);
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            deliveryPrice,
+            distance: parseFloat(distance.toFixed(2)),
+            message: deliveryPrice === 0 ? 'Frete grátis!' : `Taxa de entrega: R$ ${deliveryPrice.toFixed(2)}`
+        });
+    } catch (error) {
+        console.error('Erro ao calcular frete:', error);
+        res.status(500).json({ error: 'Erro ao calcular frete' });
+    }
+});
+
+router.delete('/delivery/config/:id', jwtValidate, async(req: Request, res: Response) => {
+    try {
+        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+        await prisma.delivery_config.delete({
+            where: { id }
+        });
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'Configuração deletada com sucesso'
+        });
+    } catch (error) {
+        console.error('Erro ao deletar config de frete:', error);
+        res.status(500).json({ error: 'Erro ao deletar configuração' });
+    }
+});
+
+console.log('[Server] Registrando rotas...');
 app.use('/api', router);
+console.log('[Server] Rotas registradas!');
 
 if (isProd) app.get(/.*/, (req: Request, res: Response) => res.sendFile(path.join(frontend, '/index.html')));
 

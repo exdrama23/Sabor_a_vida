@@ -43,7 +43,8 @@ model products {
   updated_at  DateTime    @updatedAt @db.Timestamptz(6)
   description String?     @db.VarChar(500)
   size        ProductSize
-  image       Bytes
+  image       Bytes?      // Legado - será removido após migração
+  imageUrl    String?     @db.VarChar(500) // URL do Cloudinary
 }
 
 model orders {
