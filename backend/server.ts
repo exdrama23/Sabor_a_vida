@@ -474,17 +474,55 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             orderData // Novos dados do pedido
         } = req.body;
 
+        // Log detalhado do payload recebido
+        console.log('=== PIX PAYMENT REQUEST ===' );
+        console.log('Amount:', amount);
+        console.log('Payer:', JSON.stringify(payer, null, 2));
+        console.log('OrderData presente:', !!orderData);
+
         // Validações ANTES de criar o pedido
-        if (!amount || !payer) {
-            return res.status(400).json({ error: 'Dados incompletos para o pagamento Pix' });
+        if (!amount) {
+            console.log('ERRO: amount está vazio ou undefined');
+            return res.status(400).json({ error: 'Valor do pagamento é obrigatório', field: 'amount' });
+        }
+
+        if (!payer) {
+            console.log('ERRO: payer está vazio ou undefined');
+            return res.status(400).json({ error: 'Dados do pagador são obrigatórios', field: 'payer' });
         }
 
         if (!payer.cpf) {
-            return res.status(400).json({ error: 'CPF é obrigatório para Pix' });
+            console.log('ERRO: payer.cpf está vazio ou undefined');
+            return res.status(400).json({ error: 'CPF é obrigatório para Pix', field: 'cpf' });
         }
 
-        if (!payer.email || !payer.firstName || !payer.lastName) {
-            return res.status(400).json({ error: 'Email, nome e sobrenome são obrigatórios' });
+        // Validar CPF (11 dígitos)
+        const cpfClean = payer.cpf?.replace(/\D/g, '') || '';
+        if (cpfClean.length !== 11) {
+            console.log('ERRO: CPF inválido, tamanho:', cpfClean.length);
+            return res.status(400).json({ error: 'CPF deve ter 11 dígitos', field: 'cpf' });
+        }
+
+        if (!payer.email) {
+            console.log('ERRO: payer.email está vazio ou undefined');
+            return res.status(400).json({ error: 'Email é obrigatório', field: 'email' });
+        }
+
+        if (!payer.firstName || payer.firstName.trim() === '') {
+            console.log('ERRO: payer.firstName está vazio ou undefined');
+            return res.status(400).json({ error: 'Nome é obrigatório', field: 'firstName' });
+        }
+
+        if (!payer.lastName || payer.lastName.trim() === '') {
+            console.log('ERRO: payer.lastName está vazio ou undefined');
+            return res.status(400).json({ error: 'Sobrenome é obrigatório', field: 'lastName' });
+        }
+
+        // Validar valor do pagamento
+        const amountParsed = parseFloat(amount);
+        if (isNaN(amountParsed) || amountParsed <= 0) {
+            console.log('ERRO: amount inválido:', amount);
+            return res.status(400).json({ error: 'Valor do pagamento deve ser maior que zero', field: 'amount' });
         }
 
         // Validar dados numéricos do orderData
@@ -493,8 +531,11 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             const deliveryPrice = parseFloat(orderData.deliveryPrice);
             const totalPrice = parseFloat(orderData.totalPrice);
             
+            console.log('OrderData valores: subtotal=', subtotal, 'delivery=', deliveryPrice, 'total=', totalPrice);
+            
             if (isNaN(subtotal) || isNaN(deliveryPrice) || isNaN(totalPrice)) {
-                return res.status(400).json({ error: 'Valores de subtotal, frete ou total inválidos' });
+                console.log('ERRO: valores numéricos inválidos no orderData');
+                return res.status(400).json({ error: 'Valores de subtotal, frete ou total inválidos', field: 'orderData' });
             }
         }
 
@@ -609,11 +650,31 @@ router.post('/payment/pix', async(req: Request, res: Response) => {
             }
         };
 
-        console.log('Processing PIX payment:', createPaymentRequest);
+        console.log('Processing PIX payment:', JSON.stringify(createPaymentRequest, null, 2));
 
-        const paymentData = await paymentClient.create({
-            body: createPaymentRequest
-        });
+        let paymentData;
+        try {
+            paymentData = await paymentClient.create({
+                body: createPaymentRequest
+            });
+        } catch (mpError: any) {
+            console.error('=== ERRO MERCADO PAGO ===');
+            console.error('Mensagem:', mpError?.message);
+            console.error('Causa:', mpError?.cause);
+            console.error('Response:', JSON.stringify(mpError?.response?.data || mpError?.cause, null, 2));
+            
+            // Tentar extrair mensagem de erro específica
+            const errorDetails = mpError?.cause?.[0]?.description 
+                || mpError?.response?.data?.message 
+                || mpError?.message 
+                || 'Erro desconhecido do Mercado Pago';
+            
+            return res.status(400).json({ 
+                error: 'Erro ao criar pagamento no Mercado Pago',
+                details: errorDetails,
+                mpCause: mpError?.cause || null
+            });
+        }
 
         if (paymentData && paymentData.id) {
             // const pixQrCode = (paymentData as any).point_of_interaction?.qr_code?.qr_code || null;

@@ -358,17 +358,24 @@ Aguardando confirmação!
         }
       };
 
+      // Garantir que firstName e lastName não estão vazios (usado em PIX e Cartão)
+      const nameParts = customerData.nomeCompleto.trim().split(' ').filter(part => part.length > 0);
+      const firstName = nameParts[0] || 'Cliente';
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Sabor à Vida';
+      
       if (paymentMethod.metodo === 'whatsapp') {
         await sendToWhatsApp();
         return;
       } else if (paymentMethod.metodo === 'pix') {
+        console.log('Enviando PIX - Nome:', firstName, lastName, 'CPF:', customerData.cpf);
+        
         const pixPaymentData = {
           amount: total,
           description: 'Compra de produtos - Sabor à Vida',
           payer: {
             email: customerData.email,
-            firstName: customerData.nomeCompleto.split(' ')[0],
-            lastName: customerData.nomeCompleto.split(' ').slice(1).join(' '),
+            firstName: firstName,
+            lastName: lastName,
             cpf: customerData.cpf
           },
           externalReference: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -438,8 +445,8 @@ Aguardando confirmação!
             description: 'Compra de produtos - Sabor à Vida',
             payer: {
               email: customerData.email,
-              firstName: customerData.nomeCompleto.split(' ')[0],
-              lastName: customerData.nomeCompleto.split(' ').slice(1).join(' '),
+              firstName: firstName,
+              lastName: lastName,
               cpf: customerData.cpf
             },
             orderData: {
