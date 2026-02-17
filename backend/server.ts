@@ -1465,17 +1465,34 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
         let deliveryPrice = -1; // Começa com -1 para indicar "não calculado"
         let rangeFound = false;
 
+        console.log('=== DEBUG FAIXAS ===');
+        console.log('Distância calculada:', distance);
+        console.log('Tipo da distância:', typeof distance);
+        
         for (const range of config.delivery_ranges) {
-            const minKm = Number(range.minKm);
-            const maxKm = Number(range.maxKm);
-            const price = Number(range.price);
+            console.log('---');
+            console.log('Range raw:', JSON.stringify(range));
+            console.log('minKm type:', typeof range.minKm, 'value:', range.minKm);
+            console.log('maxKm type:', typeof range.maxKm, 'value:', range.maxKm);
+            console.log('price type:', typeof range.price, 'value:', range.price);
+            
+            const minKm = parseFloat(String(range.minKm));
+            const maxKm = parseFloat(String(range.maxKm));
+            const price = parseFloat(String(range.price));
+            
+            console.log('Convertidos - minKm:', minKm, 'maxKm:', maxKm, 'price:', price);
+            console.log('Condição:', distance, '>=', minKm, '&&', distance, '<', maxKm);
+            console.log('Resultado:', distance >= minKm && distance < maxKm);
 
             if (distance >= minKm && distance < maxKm) {
                 deliveryPrice = price;
                 rangeFound = true;
+                console.log('>>> FAIXA ENCONTRADA! Preço:', price);
                 break;
             }
         }
+        console.log('=== FIM DEBUG ===');
+        console.log('rangeFound:', rangeFound, 'deliveryPrice:', deliveryPrice);
 
         // Se não encontrou nenhuma faixa que contenha a distância
         if (!rangeFound && config.delivery_ranges.length > 0) {

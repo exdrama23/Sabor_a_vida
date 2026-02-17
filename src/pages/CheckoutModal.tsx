@@ -542,6 +542,8 @@ Aguardando confirmação!
         setDeliveryErrorMessage('');
         try {
           const deliveryResponse = await api.post('/delivery/calculate', { cep: cepClean });
+          console.log('Resposta do cálculo de frete:', deliveryResponse.data);
+          
           if (deliveryResponse.data.success) {
             if (deliveryResponse.data.outOfRange) {
               // Fora da área de entrega
@@ -553,9 +555,17 @@ Aguardando confirmação!
               setDeliveryErrorMessage(deliveryResponse.data.message || 'Configure o frete');
               setCalculatedDelivery(0);
             } else {
-              setCalculatedDelivery(deliveryResponse.data.deliveryPrice || 0);
+              // Frete calculado com sucesso
+              const price = Number(deliveryResponse.data.deliveryPrice);
+              console.log('Preço de entrega recebido:', price);
+              setCalculatedDelivery(price >= 0 ? price : 0);
             }
             setDeliveryDistance(deliveryResponse.data.distance);
+          } else if (deliveryResponse.data.error) {
+            // Erro no cálculo (CEP não encontrado, coordenadas falharam, etc)
+            setOutOfDeliveryRange(true);
+            setDeliveryErrorMessage(deliveryResponse.data.message || 'Erro ao calcular frete');
+            setCalculatedDelivery(0);
           }
         } catch (deliveryError) {
           console.error('Erro ao calcular frete:', deliveryError);
