@@ -15,6 +15,10 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
   const navigate = useNavigate();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false); 
   
+  // Verificar se há itens com preço inválido (0 ou undefined)
+  const invalidPriceItems = cartItems.filter(item => !item.price || item.price <= 0);
+  const hasInvalidPrices = invalidPriceItems.length > 0;
+  
   const updateQuantity = (id: string, delta: number) => {
     setCartItems(
       cartItems.map((item) =>
@@ -126,6 +130,20 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
             </button>
           </div>
 
+          {hasInvalidPrices && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-amber-800 font-medium mb-2">⚠️ Alguns itens estão com preço inválido</p>
+              <p className="text-amber-700 text-sm mb-3">
+                Por favor, remova os itens abaixo e adicione-os novamente selecionando o tamanho:
+              </p>
+              <ul className="text-amber-700 text-sm list-disc list-inside">
+                {invalidPriceItems.map(item => (
+                  <li key={item.id}>{item.name}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {cartItems.length === 0 ? (
             <div className="text-center py-12 sm:py-16">
               <p className="text-stone-600 text-base sm:text-lg mb-6">Sua sacola está vazia</p>
@@ -213,10 +231,10 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
 
                   <button 
                     onClick={() => setIsCheckoutOpen(true)}
-                    disabled={cartItems.length === 0} 
+                    disabled={cartItems.length === 0 || hasInvalidPrices || total <= 0} 
                     className="w-full py-3 sm:py-4 bg-rose-600 text-white rounded-lg sm:rounded-xl font-semibold hover:bg-rose-700 transition-colors mb-4 sm:mb-6 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
-                    FINALIZAR COMPRA
+                    {hasInvalidPrices ? 'CORRIJA OS ITENS ACIMA' : 'FINALIZAR COMPRA'}
                   </button>
                 </div>
               </div>
