@@ -17,7 +17,7 @@ const JWT_SECRET = process.env.JWT_SECRET as string;
 const isProd = process.env.NODE_ENV === 'production';
 
 // Usar credenciais de produção do Mercado Pago
-const mercadopagoAccessToken = process.env.MERCADO_PAGO_ACESS_TOKEN_KEY || '';
+const mercadopagoAccessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN_KEY || '';
 const mercadopagoPublicKey = process.env.MERCADO_PAGO_PUBLIC_KEY || '';
 const webhookSignatureKey = process.env.WEBHOOKS_NOTIFICACOES || '';
 
@@ -416,40 +416,65 @@ router.post('/payment/pix', async(req, res) => {
             orderData // Novos dados do pedido
         } = req.body;
 
+        // Validações ANTES de criar o pedido
         if (!amount || !payer) {
             return res.status(400).json({ error: 'Dados incompletos para o pagamento Pix' });
         }
 
+        if (!payer.cpf) {
+            return res.status(400).json({ error: 'CPF é obrigatório para Pix' });
+        }
+
+        if (!payer.email || !payer.firstName || !payer.lastName) {
+            return res.status(400).json({ error: 'Email, nome e sobrenome são obrigatórios' });
+        }
+
+        // Validar dados numéricos do orderData
+        if (orderData) {
+            const subtotal = parseFloat(orderData.subtotal);
+            const deliveryPrice = parseFloat(orderData.deliveryPrice);
+            const totalPrice = parseFloat(orderData.totalPrice);
+            
+            if (isNaN(subtotal) || isNaN(deliveryPrice) || isNaN(totalPrice)) {
+                return res.status(400).json({ error: 'Valores de subtotal, frete ou total inválidos' });
+            }
+        }
+
         const finalExternalReference = externalReference || `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Primeiro, salvar o pedido
+        // Salvar o pedido (após validações)
         if (orderData) {
-            await prisma.orders.create({
-                data: {
-                    externalReference: finalExternalReference,
-                    customerName: orderData.customerName,
-                    customerEmail: orderData.customerEmail,
-                    customerPhone: orderData.customerPhone,
-                    customerCpf: orderData.customerCpf,
-                    addressStreet: orderData.addressStreet,
-                    addressNumber: orderData.addressNumber,
-                    addressComplement: orderData.addressComplement || null,
-                    addressNeighborhood: orderData.addressNeighborhood,
-                    addressCity: orderData.addressCity,
-                    addressState: orderData.addressState,
-                    addressZip: orderData.addressZip,
-                    addressReference: orderData.addressReference || null,
-                    addressType: orderData.addressType,
-                    deliveryNotes: orderData.deliveryNotes || null,
-                    items: orderData.items || [],
-                    cakeSize: orderData.cakeSize || null,
-                    subtotal: parseFloat(orderData.subtotal),
-                    deliveryPrice: parseFloat(orderData.deliveryPrice),
-                    totalPrice: parseFloat(orderData.totalPrice),
-                    paymentMethod: 'PIX',
-                    paymentStatus: 'PENDING'
-                }
-            });
+            try {
+                await prisma.orders.create({
+                    data: {
+                        externalReference: finalExternalReference,
+                        customerName: orderData.customerName,
+                        customerEmail: orderData.customerEmail,
+                        customerPhone: orderData.customerPhone,
+                        customerCpf: orderData.customerCpf,
+                        addressStreet: orderData.addressStreet,
+                        addressNumber: orderData.addressNumber,
+                        addressComplement: orderData.addressComplement || null,
+                        addressNeighborhood: orderData.addressNeighborhood,
+                        addressCity: orderData.addressCity,
+                        addressState: orderData.addressState,
+                        addressZip: orderData.addressZip,
+                        addressReference: orderData.addressReference || null,
+                        addressType: orderData.addressType,
+                        deliveryNotes: orderData.deliveryNotes || null,
+                        items: orderData.items || [],
+                        cakeSize: orderData.cakeSize || null,
+                        subtotal: parseFloat(orderData.subtotal),
+                        deliveryPrice: parseFloat(orderData.deliveryPrice),
+                        totalPrice: parseFloat(orderData.totalPrice),
+                        paymentMethod: 'PIX',
+                        paymentStatus: 'PENDING'
+                    }
+                });
+            } catch (orderError) {
+                console.error('Erro ao criar pedido no banco:', orderError);
+                return res.status(500).json({ error: 'Erro ao salvar pedido', details: orderError instanceof Error ? orderError.message : 'Erro desconhecido' });
+            }
         }
 
         const createPaymentRequest = {
@@ -464,6 +489,7 @@ router.post('/payment/pix', async(req, res) => {
                     type: 'CPF',
                     number: payer.cpf?.replace(/\D/g, '') || ''
                 }
+                
             },
             external_reference: finalExternalReference
         };
@@ -507,12 +533,23 @@ router.post('/payment/pix', async(req, res) => {
                 details: (paymentData as any)?.message || 'Unknown error'
             });
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Erro ao processar pagamento Pix:', error);
+        
+        // Log detalhado para debug em produção
+        if (error?.cause) {
+            console.error('Causa do erro:', error.cause);
+        }
+        if (error?.response?.data) {
+            console.error('Resposta do Mercado Pago:', JSON.stringify(error.response.data, null, 2));
+        }
+        
         const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+        const mpError = error?.response?.data?.message || error?.cause?.message || null;
+        
         res.status(500).json({ 
             error: 'Erro ao processar pagamento Pix',
-            details: errorMsg
+            details: mpError || errorMsg
         });
     }
 });
