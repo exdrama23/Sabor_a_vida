@@ -1421,10 +1421,11 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
 
         if (!originLat || !originLng) {
             return res.status(200).json({ 
-                success: true, 
-                deliveryPrice: 0,
+                success: false, 
+                deliveryPrice: -1,
                 distance: null,
-                message: 'Não foi possível calcular distância - frete grátis'
+                error: true,
+                message: 'Não foi possível calcular distância - entre em contato pelo WhatsApp'
             });
         }
 
@@ -1432,10 +1433,11 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
 
         if (!destCoords) {
             return res.status(200).json({ 
-                success: true, 
-                deliveryPrice: 0,
+                success: false, 
+                deliveryPrice: -1,
                 distance: null,
-                message: 'CEP de destino não encontrado - frete grátis'
+                error: true,
+                message: 'CEP de destino não encontrado - verifique o CEP ou entre em contato'
             });
         }
 
@@ -1447,8 +1449,20 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
         );
 
         console.log('Cálculo de frete - Origem:', originLat, originLng, 'Destino:', destCoords, 'Distância:', distance.toFixed(2), 'km');
+        console.log('Faixas configuradas:', config.delivery_ranges.map(r => `${r.minKm}-${r.maxKm}km: R$${r.price}`).join(', '));
 
-        let deliveryPrice = 0;
+        // Se não há faixas configuradas, retornar erro
+        if (!config.delivery_ranges || config.delivery_ranges.length === 0) {
+            return res.status(200).json({ 
+                success: false, 
+                deliveryPrice: -1,
+                distance: parseFloat(distance.toFixed(2)),
+                error: true,
+                message: 'Faixas de preço não configuradas - entre em contato pelo WhatsApp'
+            });
+        }
+
+        let deliveryPrice = -1; // Começa com -1 para indicar "não calculado"
         let rangeFound = false;
 
         for (const range of config.delivery_ranges) {
@@ -1463,11 +1477,14 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
             }
         }
 
+        // Se não encontrou nenhuma faixa que contenha a distância
         if (!rangeFound && config.delivery_ranges.length > 0) {
             const lastRange = config.delivery_ranges[config.delivery_ranges.length - 1];
             const maxConfiguredKm = Number(lastRange.maxKm);
             
+            // Distância maior que o máximo configurado = fora da área
             if (distance >= maxConfiguredKm) {
+                console.log(`Fora da área: ${distance.toFixed(2)}km >= ${maxConfiguredKm}km (máximo)`);
                 return res.status(200).json({ 
                     success: true, 
                     deliveryPrice: -1, 
@@ -1476,8 +1493,20 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
                     message: `Fora da área de entrega (${distance.toFixed(1)} km). Máximo: ${maxConfiguredKm} km`
                 });
             }
-            deliveryPrice = Number(lastRange.price);
+            
+            // Distância menor que o mínimo da primeira faixa (caso raro)
+            const firstRange = config.delivery_ranges[0];
+            if (distance < Number(firstRange.minKm)) {
+                deliveryPrice = Number(firstRange.price);
+                console.log(`Distância menor que mínimo, usando primeira faixa: R$${deliveryPrice}`);
+            } else {
+                // Fallback: usar última faixa (não deveria chegar aqui)
+                deliveryPrice = Number(lastRange.price);
+                console.log(`Fallback para última faixa: R$${deliveryPrice}`);
+            }
         }
+
+        console.log(`Frete calculado: ${distance.toFixed(2)}km = R$${deliveryPrice}`);
 
         res.status(200).json({ 
             success: true, 
