@@ -68,7 +68,7 @@ const AdminDashboard = () => {
     },
     { 
       title: 'Receita Total', 
-      value: `R$ ${stats.totalRevenue.toFixed(2)}`, 
+      value: `R$ ${Number(stats.totalRevenue ?? 0).toFixed(2)}`, 
       icon: DollarSign, 
       color: 'bg-rose-500' 
     },
@@ -167,7 +167,7 @@ const AdminDashboard = () => {
                       <div className="flex justify-between items-start">
                         <p className="font-medium text-stone-800 text-sm">{product.name}</p>
                         <span className="text-sm font-bold text-rose-600">
-                          R$ {product.price?.toFixed(2).replace('.', ',')}
+                          R$ {Number(product.price ?? 0).toFixed(2).replace('.', ',')}
                         </span>
                       </div>
                       <p className="text-xs text-stone-500 mt-1">Marcado como destaque</p>

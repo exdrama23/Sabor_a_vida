@@ -352,7 +352,7 @@ const ConfigFrete = () => {
 
         {config.originLat && config.originLng && (
           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
-            <strong>Coordenadas:</strong> {Number(config.originLat).toFixed(6)}, {Number(config.originLng).toFixed(6)}
+            <strong>Coordenadas:</strong> {Number(config.originLat ?? 0).toFixed(6)}, {Number(config.originLng ?? 0).toFixed(6)}
           </div>
         )}
       </div>
@@ -421,7 +421,7 @@ const ConfigFrete = () => {
                 {range.price === 0 ? (
                   <span className="text-green-600 font-medium">Grátis</span>
                 ) : (
-                  <span>Taxa: R$ {range.price.toFixed(2)}</span>
+                  <span>Taxa: R$ {Number(range.price ?? 0).toFixed(2)}</span>
                 )}
               </div>
               <div className="col-span-1 md:col-span-2 flex justify-end">
@@ -484,7 +484,7 @@ const ConfigFrete = () => {
           }`}>
             {testResult.distance !== undefined && (
               <p className="text-stone-800">
-                <strong>Distância:</strong> {testResult.distance.toFixed(2)} km
+                <strong>Distância:</strong> {Number(testResult.distance ?? 0).toFixed(2)} km
               </p>
             )}
             {testResult.price !== undefined && (
@@ -492,7 +492,7 @@ const ConfigFrete = () => {
                 <strong>Taxa de Entrega:</strong> {testResult.price === 0 ? (
                   <span className="text-green-600 font-bold">GRÁTIS!</span>
                 ) : (
-                  <span className="font-bold">R$ {testResult.price.toFixed(2)}</span>
+                  <span className="font-bold">R$ {Number(testResult.price ?? 0).toFixed(2)}</span>
                 )}
               </p>
             )}

@@ -219,12 +219,12 @@ const CartPage = ({ cartItems, setCartItems }: CartPageProps) => {
                   <div className="space-y-3 sm:space-y-4 mb-5 sm:mb-6 md:mb-8">
                     <div className="flex justify-between text-stone-600 text-sm sm:text-base">
                       <span>Subtotal</span>
-                      <span className="font-medium">R$ {subtotal.toFixed(2).replace('.', ',')}</span>
+                      <span className="font-medium">R$ {Number(subtotal ?? 0).toFixed(2).replace('.', ',')}</span>
                     </div>
                     <div className="border-t border-stone-200 pt-3 sm:pt-4 mt-3 sm:mt-4">
                       <div className="flex justify-between text-lg sm:text-xl font-bold text-stone-900">
                         <span>Total</span>
-                        <span>R$ {total.toFixed(2).replace('.', ',')}</span>
+                        <span>R$ {Number(total ?? 0).toFixed(2).replace('.', ',')}</span>
                       </div>
                     </div>
                   </div>

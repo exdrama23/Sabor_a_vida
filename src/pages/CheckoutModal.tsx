@@ -156,9 +156,9 @@ ${itemsList}
 ${boloTamanho}
 
 *RESUMO DO PAGAMENTO*
-Subtotal: R$ ${subtotal.toFixed(2)}
-Entrega: R$ ${calculatedDelivery.toFixed(2)}
-*TOTAL: R$ ${dynamicTotal.toFixed(2)}*
+Subtotal: R$ ${Number(subtotal ?? 0).toFixed(2)}
+Entrega: R$ ${Number(calculatedDelivery ?? 0).toFixed(2)}
+*TOTAL: R$ ${Number(dynamicTotal ?? 0).toFixed(2)}*
 
 Aguardando confirmação!
     `.trim();
@@ -1017,7 +1017,7 @@ Aguardando confirmação!
                               </span>
                               {deliveryDistance !== null && (
                                 <span className="text-xs text-red-600 ml-2">
-                                  ({deliveryDistance.toFixed(1)} km)
+                                  ({Number(deliveryDistance ?? 0).toFixed(1)} km)
                                 </span>
                               )}
                               <p className="text-xs text-red-600 mt-1">
@@ -1030,11 +1030,11 @@ Aguardando confirmação!
                             <Truck className={`w-5 h-5 ${calculatedDelivery === 0 ? 'text-green-600' : 'text-amber-600'}`} />
                             <div>
                               <span className={`font-medium ${calculatedDelivery === 0 ? 'text-green-800' : 'text-amber-800'}`}>
-                                {calculatedDelivery === 0 ? 'Frete Grátis!' : `Taxa de entrega: R$ ${calculatedDelivery.toFixed(2).replace('.', ',')}`}
+                                {calculatedDelivery === 0 ? 'Frete Grátis!' : `Taxa de entrega: R$ ${Number(calculatedDelivery ?? 0).toFixed(2).replace('.', ',')}`}
                               </span>
                               {deliveryDistance !== null && (
                                 <span className="text-xs text-stone-500 ml-2">
-                                  (Distância: {deliveryDistance.toFixed(1)} km)
+                                  (Distância: {Number(deliveryDistance ?? 0).toFixed(1)} km)
                                 </span>
                               )}
                             </div>
@@ -1274,7 +1274,7 @@ Aguardando confirmação!
                         >
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(num => (
                             <option key={num} value={num}>
-                              {num}x {num > 1 ? `de R$ ${(dynamicTotal / num).toFixed(2).replace('.', ',')}` : `(à vista)`}
+                              {num}x {num > 1 ? `de R$ ${(Number(dynamicTotal ?? 0) / num).toFixed(2).replace('.', ',')}` : `(à vista)`}
                             </option>
                           ))}
                         </select>
@@ -1336,7 +1336,7 @@ Aguardando confirmação!
                         <div className="flex justify-between text-stone-600">
                           <span>Subtotal</span>
                           <span className="font-medium">
-                            R$ {subtotal.toFixed(2).replace('.', ',')}
+                            R$ {Number(subtotal ?? 0).toFixed(2).replace('.', ',')}
                           </span>
                         </div>
                         
@@ -1344,18 +1344,18 @@ Aguardando confirmação!
                           <div className="flex items-center gap-2">
                             <span>Entrega</span>
                             {deliveryDistance !== null && (
-                              <span className="text-xs text-stone-400">({deliveryDistance.toFixed(1)} km)</span>
+                              <span className="text-xs text-stone-400">({Number(deliveryDistance ?? 0).toFixed(1)} km)</span>
                             )}
                           </div>
                           <span className={`font-medium ${calculatedDelivery === 0 ? 'text-green-600' : ''}`}>
-                            {calculatedDelivery === 0 ? 'GRÁTIS' : `R$ ${calculatedDelivery.toFixed(2).replace('.', ',')}`}
+                            {calculatedDelivery === 0 ? 'GRÁTIS' : `R$ ${Number(calculatedDelivery ?? 0).toFixed(2).replace('.', ',')}`}
                           </span>
                         </div>
                         
                         <div className="border-t border-stone-200 pt-4">
                           <div className="flex justify-between text-xl font-bold text-stone-900">
                             <span>Total</span>
-                            <span>R$ {dynamicTotal.toFixed(2).replace('.', ',')}</span>
+                            <span>R$ {Number(dynamicTotal ?? 0).toFixed(2).replace('.', ',')}</span>
                           </div>
                         </div>
                       </div>
@@ -1432,7 +1432,7 @@ Aguardando confirmação!
                               {cardData.tipoCartao.toUpperCase()} •••• {cardData.numeroCartao.slice(-4)}
                             </p>
                             <p className="text-sm text-stone-600">
-                              {cardData.parcelas}x de R$ {(dynamicTotal / cardData.parcelas).toFixed(2).replace('.', ',')}
+                              {cardData.parcelas}x de R$ {(Number(dynamicTotal ?? 0) / cardData.parcelas).toFixed(2).replace('.', ',')}
                             </p>
                           </>
                         )}
@@ -1484,7 +1484,7 @@ Aguardando confirmação!
                         Referência: <span className="font-mono font-medium">{pixData.orderReference}</span>
                       </p>
                       <p className="text-sm text-green-700 mt-2">
-                        Valor: <span className="font-medium">R$ {(pixData.amount ?? dynamicTotal).toFixed(2).replace('.', ',')}</span>
+                        Valor: <span className="font-medium">R$ {Number(pixData.amount ?? dynamicTotal ?? 0).toFixed(2).replace('.', ',')}</span>
                       </p>
                     </div>
 

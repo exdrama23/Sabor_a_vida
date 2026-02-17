@@ -139,7 +139,7 @@ const Logs = () => {
                             </span>
                           </div>
                           <span className="text-rose-600 font-bold text-sm sm:text-base">
-                            R$ {Number(payment.transactionAmount).toFixed(2).replace('.', ',')}
+                            R$ {Number(payment.transactionAmount ?? 0).toFixed(2).replace('.', ',')}
                           </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-stone-500">
@@ -224,8 +224,8 @@ const Logs = () => {
                         {/* Data e valores */}
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm text-stone-500 mb-2">
                           <span>{formatDate(order.created_at)}</span>
-                          <span>Subtotal: R$ {Number(order.subtotal).toFixed(2).replace('.', ',')}</span>
-                          <span>Entrega: R$ {Number(order.deliveryPrice).toFixed(2).replace('.', ',')}</span>
+                          <span>Subtotal: R$ {Number(order.subtotal ?? 0).toFixed(2).replace('.', ',')}</span>
+                          <span>Entrega: R$ {Number(order.deliveryPrice ?? 0).toFixed(2).replace('.', ',')}</span>
                           {order.installments && order.installments > 1 && (
                             <span>{order.installments}x parcelas</span>
                           )}
@@ -241,7 +241,7 @@ const Logs = () => {
                             <div className="flex flex-wrap gap-2">
                               {(Array.isArray(order.items) ? order.items : []).map((item, idx) => (
                                 <span key={idx} className="text-xs bg-stone-100 px-2 py-1 rounded">
-                                  {item.quantity}x {item.name} {item.size && `(${item.size})`} - R$ {Number(item.price).toFixed(2).replace('.', ',')}
+                                  {item.quantity}x {item.name} {item.size && `(${item.size})`} - R$ {Number(item.price ?? 0).toFixed(2).replace('.', ',')}
                                 </span>
                               ))}
                             </div>

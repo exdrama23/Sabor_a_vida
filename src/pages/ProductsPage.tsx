@@ -176,8 +176,8 @@ const ProductsPage = ({ cart, setCart, products }: ProductsPageProps) => {
     }
   };
 
-  const formatPrice = (price: number) => {
-    return price.toFixed(2).replace('.', ',');
+  const formatPrice = (price: number | null | undefined) => {
+    return Number(price ?? 0).toFixed(2).replace('.', ',');
   };
 
   return (
