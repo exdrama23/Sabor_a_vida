@@ -63,14 +63,14 @@ export type OrdersMinAggregateOutputType = {
   totalPrice: runtime.Decimal | null
   paymentMethod: $Enums.PaymentMethod | null
   paymentStatus: $Enums.PaymentStatus | null
-  deliveryStatus: $Enums.DeliveryStatus | null
-  deliveredAt: Date | null
   mercadoPagoPaymentId: string | null
   cardLastFour: string | null
   installments: number | null
   created_at: Date | null
   updated_at: Date | null
   whatsappSentAt: Date | null
+  deliveredAt: Date | null
+  deliveryStatus: $Enums.DeliveryStatus | null
 }
 
 export type OrdersMaxAggregateOutputType = {
@@ -96,14 +96,14 @@ export type OrdersMaxAggregateOutputType = {
   totalPrice: runtime.Decimal | null
   paymentMethod: $Enums.PaymentMethod | null
   paymentStatus: $Enums.PaymentStatus | null
-  deliveryStatus: $Enums.DeliveryStatus | null
-  deliveredAt: Date | null
   mercadoPagoPaymentId: string | null
   cardLastFour: string | null
   installments: number | null
   created_at: Date | null
   updated_at: Date | null
   whatsappSentAt: Date | null
+  deliveredAt: Date | null
+  deliveryStatus: $Enums.DeliveryStatus | null
 }
 
 export type OrdersCountAggregateOutputType = {
@@ -130,14 +130,14 @@ export type OrdersCountAggregateOutputType = {
   totalPrice: number
   paymentMethod: number
   paymentStatus: number
-  deliveryStatus: number
-  deliveredAt: number
   mercadoPagoPaymentId: number
   cardLastFour: number
   installments: number
   created_at: number
   updated_at: number
   whatsappSentAt: number
+  deliveredAt: number
+  deliveryStatus: number
   _all: number
 }
 
@@ -179,14 +179,14 @@ export type OrdersMinAggregateInputType = {
   totalPrice?: true
   paymentMethod?: true
   paymentStatus?: true
-  deliveryStatus?: true
-  deliveredAt?: true
   mercadoPagoPaymentId?: true
   cardLastFour?: true
   installments?: true
   created_at?: true
   updated_at?: true
   whatsappSentAt?: true
+  deliveredAt?: true
+  deliveryStatus?: true
 }
 
 export type OrdersMaxAggregateInputType = {
@@ -212,14 +212,14 @@ export type OrdersMaxAggregateInputType = {
   totalPrice?: true
   paymentMethod?: true
   paymentStatus?: true
-  deliveryStatus?: true
-  deliveredAt?: true
   mercadoPagoPaymentId?: true
   cardLastFour?: true
   installments?: true
   created_at?: true
   updated_at?: true
   whatsappSentAt?: true
+  deliveredAt?: true
+  deliveryStatus?: true
 }
 
 export type OrdersCountAggregateInputType = {
@@ -246,14 +246,14 @@ export type OrdersCountAggregateInputType = {
   totalPrice?: true
   paymentMethod?: true
   paymentStatus?: true
-  deliveryStatus?: true
-  deliveredAt?: true
   mercadoPagoPaymentId?: true
   cardLastFour?: true
   installments?: true
   created_at?: true
   updated_at?: true
   whatsappSentAt?: true
+  deliveredAt?: true
+  deliveryStatus?: true
   _all?: true
 }
 
@@ -367,14 +367,14 @@ export type OrdersGroupByOutputType = {
   totalPrice: runtime.Decimal
   paymentMethod: $Enums.PaymentMethod
   paymentStatus: $Enums.PaymentStatus
-  deliveryStatus: $Enums.DeliveryStatus
-  deliveredAt: Date | null
   mercadoPagoPaymentId: string | null
   cardLastFour: string | null
   installments: number | null
   created_at: Date
   updated_at: Date
   whatsappSentAt: Date | null
+  deliveredAt: Date | null
+  deliveryStatus: $Enums.DeliveryStatus
   _count: OrdersCountAggregateOutputType | null
   _avg: OrdersAvgAggregateOutputType | null
   _sum: OrdersSumAggregateOutputType | null
@@ -424,14 +424,14 @@ export type ordersWhereInput = {
   totalPrice?: Prisma.DecimalFilter<"orders"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   paymentMethod?: Prisma.EnumPaymentMethodFilter<"orders"> | $Enums.PaymentMethod
   paymentStatus?: Prisma.EnumPaymentStatusFilter<"orders"> | $Enums.PaymentStatus
-  deliveryStatus?: Prisma.EnumDeliveryStatusFilter<"orders"> | $Enums.DeliveryStatus
-  deliveredAt?: Prisma.DateTimeNullableFilter<"orders"> | Date | string | null
   mercadoPagoPaymentId?: Prisma.StringNullableFilter<"orders"> | string | null
   cardLastFour?: Prisma.StringNullableFilter<"orders"> | string | null
   installments?: Prisma.IntNullableFilter<"orders"> | number | null
   created_at?: Prisma.DateTimeFilter<"orders"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"orders"> | Date | string
   whatsappSentAt?: Prisma.DateTimeNullableFilter<"orders"> | Date | string | null
+  deliveredAt?: Prisma.DateTimeNullableFilter<"orders"> | Date | string | null
+  deliveryStatus?: Prisma.EnumDeliveryStatusFilter<"orders"> | $Enums.DeliveryStatus
 }
 
 export type ordersOrderByWithRelationInput = {
@@ -458,14 +458,14 @@ export type ordersOrderByWithRelationInput = {
   totalPrice?: Prisma.SortOrder
   paymentMethod?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
-  deliveryStatus?: Prisma.SortOrder
-  deliveredAt?: Prisma.SortOrderInput | Prisma.SortOrder
   mercadoPagoPaymentId?: Prisma.SortOrderInput | Prisma.SortOrder
   cardLastFour?: Prisma.SortOrderInput | Prisma.SortOrder
   installments?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   whatsappSentAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  deliveredAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  deliveryStatus?: Prisma.SortOrder
 }
 
 export type ordersWhereUniqueInput = Prisma.AtLeast<{
@@ -496,13 +496,13 @@ export type ordersWhereUniqueInput = Prisma.AtLeast<{
   totalPrice?: Prisma.DecimalFilter<"orders"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   paymentMethod?: Prisma.EnumPaymentMethodFilter<"orders"> | $Enums.PaymentMethod
   paymentStatus?: Prisma.EnumPaymentStatusFilter<"orders"> | $Enums.PaymentStatus
-  deliveryStatus?: Prisma.EnumDeliveryStatusFilter<"orders"> | $Enums.DeliveryStatus
-  deliveredAt?: Prisma.DateTimeNullableFilter<"orders"> | Date | string | null
   cardLastFour?: Prisma.StringNullableFilter<"orders"> | string | null
   installments?: Prisma.IntNullableFilter<"orders"> | number | null
   created_at?: Prisma.DateTimeFilter<"orders"> | Date | string
   updated_at?: Prisma.DateTimeFilter<"orders"> | Date | string
   whatsappSentAt?: Prisma.DateTimeNullableFilter<"orders"> | Date | string | null
+  deliveredAt?: Prisma.DateTimeNullableFilter<"orders"> | Date | string | null
+  deliveryStatus?: Prisma.EnumDeliveryStatusFilter<"orders"> | $Enums.DeliveryStatus
 }, "id" | "externalReference" | "mercadoPagoPaymentId">
 
 export type ordersOrderByWithAggregationInput = {
@@ -529,14 +529,14 @@ export type ordersOrderByWithAggregationInput = {
   totalPrice?: Prisma.SortOrder
   paymentMethod?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
-  deliveryStatus?: Prisma.SortOrder
-  deliveredAt?: Prisma.SortOrderInput | Prisma.SortOrder
   mercadoPagoPaymentId?: Prisma.SortOrderInput | Prisma.SortOrder
   cardLastFour?: Prisma.SortOrderInput | Prisma.SortOrder
   installments?: Prisma.SortOrderInput | Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   whatsappSentAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  deliveredAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  deliveryStatus?: Prisma.SortOrder
   _count?: Prisma.ordersCountOrderByAggregateInput
   _avg?: Prisma.ordersAvgOrderByAggregateInput
   _max?: Prisma.ordersMaxOrderByAggregateInput
@@ -571,14 +571,14 @@ export type ordersScalarWhereWithAggregatesInput = {
   totalPrice?: Prisma.DecimalWithAggregatesFilter<"orders"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   paymentMethod?: Prisma.EnumPaymentMethodWithAggregatesFilter<"orders"> | $Enums.PaymentMethod
   paymentStatus?: Prisma.EnumPaymentStatusWithAggregatesFilter<"orders"> | $Enums.PaymentStatus
-  deliveryStatus?: Prisma.EnumDeliveryStatusWithAggregatesFilter<"orders"> | $Enums.DeliveryStatus
-  deliveredAt?: Prisma.DateTimeNullableWithAggregatesFilter<"orders"> | Date | string | null
   mercadoPagoPaymentId?: Prisma.StringNullableWithAggregatesFilter<"orders"> | string | null
   cardLastFour?: Prisma.StringNullableWithAggregatesFilter<"orders"> | string | null
   installments?: Prisma.IntNullableWithAggregatesFilter<"orders"> | number | null
   created_at?: Prisma.DateTimeWithAggregatesFilter<"orders"> | Date | string
   updated_at?: Prisma.DateTimeWithAggregatesFilter<"orders"> | Date | string
   whatsappSentAt?: Prisma.DateTimeNullableWithAggregatesFilter<"orders"> | Date | string | null
+  deliveredAt?: Prisma.DateTimeNullableWithAggregatesFilter<"orders"> | Date | string | null
+  deliveryStatus?: Prisma.EnumDeliveryStatusWithAggregatesFilter<"orders"> | $Enums.DeliveryStatus
 }
 
 export type ordersCreateInput = {
@@ -605,14 +605,14 @@ export type ordersCreateInput = {
   totalPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   paymentMethod: $Enums.PaymentMethod
   paymentStatus?: $Enums.PaymentStatus
-  deliveryStatus?: $Enums.DeliveryStatus
-  deliveredAt?: Date | string | null
   mercadoPagoPaymentId?: string | null
   cardLastFour?: string | null
   installments?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   whatsappSentAt?: Date | string | null
+  deliveredAt?: Date | string | null
+  deliveryStatus?: $Enums.DeliveryStatus
 }
 
 export type ordersUncheckedCreateInput = {
@@ -639,14 +639,14 @@ export type ordersUncheckedCreateInput = {
   totalPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   paymentMethod: $Enums.PaymentMethod
   paymentStatus?: $Enums.PaymentStatus
-  deliveryStatus?: $Enums.DeliveryStatus
-  deliveredAt?: Date | string | null
   mercadoPagoPaymentId?: string | null
   cardLastFour?: string | null
   installments?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   whatsappSentAt?: Date | string | null
+  deliveredAt?: Date | string | null
+  deliveryStatus?: $Enums.DeliveryStatus
 }
 
 export type ordersUpdateInput = {
@@ -673,14 +673,14 @@ export type ordersUpdateInput = {
   totalPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
   paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
-  deliveryStatus?: Prisma.EnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus
-  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   mercadoPagoPaymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cardLastFour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   installments?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   whatsappSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveryStatus?: Prisma.EnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus
 }
 
 export type ordersUncheckedUpdateInput = {
@@ -707,14 +707,14 @@ export type ordersUncheckedUpdateInput = {
   totalPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
   paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
-  deliveryStatus?: Prisma.EnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus
-  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   mercadoPagoPaymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cardLastFour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   installments?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   whatsappSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveryStatus?: Prisma.EnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus
 }
 
 export type ordersCreateManyInput = {
@@ -741,14 +741,14 @@ export type ordersCreateManyInput = {
   totalPrice: runtime.Decimal | runtime.DecimalJsLike | number | string
   paymentMethod: $Enums.PaymentMethod
   paymentStatus?: $Enums.PaymentStatus
-  deliveryStatus?: $Enums.DeliveryStatus
-  deliveredAt?: Date | string | null
   mercadoPagoPaymentId?: string | null
   cardLastFour?: string | null
   installments?: number | null
   created_at?: Date | string
   updated_at?: Date | string
   whatsappSentAt?: Date | string | null
+  deliveredAt?: Date | string | null
+  deliveryStatus?: $Enums.DeliveryStatus
 }
 
 export type ordersUpdateManyMutationInput = {
@@ -775,14 +775,14 @@ export type ordersUpdateManyMutationInput = {
   totalPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
   paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
-  deliveryStatus?: Prisma.EnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus
-  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   mercadoPagoPaymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cardLastFour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   installments?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   whatsappSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveryStatus?: Prisma.EnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus
 }
 
 export type ordersUncheckedUpdateManyInput = {
@@ -809,14 +809,14 @@ export type ordersUncheckedUpdateManyInput = {
   totalPrice?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   paymentMethod?: Prisma.EnumPaymentMethodFieldUpdateOperationsInput | $Enums.PaymentMethod
   paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
-  deliveryStatus?: Prisma.EnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus
-  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   mercadoPagoPaymentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   cardLastFour?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   installments?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   created_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updated_at?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   whatsappSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  deliveryStatus?: Prisma.EnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus
 }
 
 export type ordersCountOrderByAggregateInput = {
@@ -843,14 +843,14 @@ export type ordersCountOrderByAggregateInput = {
   totalPrice?: Prisma.SortOrder
   paymentMethod?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
-  deliveryStatus?: Prisma.SortOrder
-  deliveredAt?: Prisma.SortOrder
   mercadoPagoPaymentId?: Prisma.SortOrder
   cardLastFour?: Prisma.SortOrder
   installments?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   whatsappSentAt?: Prisma.SortOrder
+  deliveredAt?: Prisma.SortOrder
+  deliveryStatus?: Prisma.SortOrder
 }
 
 export type ordersAvgOrderByAggregateInput = {
@@ -883,14 +883,14 @@ export type ordersMaxOrderByAggregateInput = {
   totalPrice?: Prisma.SortOrder
   paymentMethod?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
-  deliveryStatus?: Prisma.SortOrder
-  deliveredAt?: Prisma.SortOrder
   mercadoPagoPaymentId?: Prisma.SortOrder
   cardLastFour?: Prisma.SortOrder
   installments?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   whatsappSentAt?: Prisma.SortOrder
+  deliveredAt?: Prisma.SortOrder
+  deliveryStatus?: Prisma.SortOrder
 }
 
 export type ordersMinOrderByAggregateInput = {
@@ -916,14 +916,14 @@ export type ordersMinOrderByAggregateInput = {
   totalPrice?: Prisma.SortOrder
   paymentMethod?: Prisma.SortOrder
   paymentStatus?: Prisma.SortOrder
-  deliveryStatus?: Prisma.SortOrder
-  deliveredAt?: Prisma.SortOrder
   mercadoPagoPaymentId?: Prisma.SortOrder
   cardLastFour?: Prisma.SortOrder
   installments?: Prisma.SortOrder
   created_at?: Prisma.SortOrder
   updated_at?: Prisma.SortOrder
   whatsappSentAt?: Prisma.SortOrder
+  deliveredAt?: Prisma.SortOrder
+  deliveryStatus?: Prisma.SortOrder
 }
 
 export type ordersSumOrderByAggregateInput = {
@@ -941,20 +941,20 @@ export type EnumPaymentStatusFieldUpdateOperationsInput = {
   set?: $Enums.PaymentStatus
 }
 
-export type EnumDeliveryStatusFieldUpdateOperationsInput = {
-  set?: $Enums.DeliveryStatus
-}
-
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type NullableIntFieldUpdateOperationsInput = {
   set?: number | null
   increment?: number
   decrement?: number
   multiply?: number
   divide?: number
+}
+
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null
+}
+
+export type EnumDeliveryStatusFieldUpdateOperationsInput = {
+  set?: $Enums.DeliveryStatus
 }
 
 
@@ -983,14 +983,14 @@ export type ordersSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   totalPrice?: boolean
   paymentMethod?: boolean
   paymentStatus?: boolean
-  deliveryStatus?: boolean
-  deliveredAt?: boolean
   mercadoPagoPaymentId?: boolean
   cardLastFour?: boolean
   installments?: boolean
   created_at?: boolean
   updated_at?: boolean
   whatsappSentAt?: boolean
+  deliveredAt?: boolean
+  deliveryStatus?: boolean
 }, ExtArgs["result"]["orders"]>
 
 export type ordersSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1017,14 +1017,14 @@ export type ordersSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   totalPrice?: boolean
   paymentMethod?: boolean
   paymentStatus?: boolean
-  deliveryStatus?: boolean
-  deliveredAt?: boolean
   mercadoPagoPaymentId?: boolean
   cardLastFour?: boolean
   installments?: boolean
   created_at?: boolean
   updated_at?: boolean
   whatsappSentAt?: boolean
+  deliveredAt?: boolean
+  deliveryStatus?: boolean
 }, ExtArgs["result"]["orders"]>
 
 export type ordersSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1051,14 +1051,14 @@ export type ordersSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   totalPrice?: boolean
   paymentMethod?: boolean
   paymentStatus?: boolean
-  deliveryStatus?: boolean
-  deliveredAt?: boolean
   mercadoPagoPaymentId?: boolean
   cardLastFour?: boolean
   installments?: boolean
   created_at?: boolean
   updated_at?: boolean
   whatsappSentAt?: boolean
+  deliveredAt?: boolean
+  deliveryStatus?: boolean
 }, ExtArgs["result"]["orders"]>
 
 export type ordersSelectScalar = {
@@ -1085,17 +1085,17 @@ export type ordersSelectScalar = {
   totalPrice?: boolean
   paymentMethod?: boolean
   paymentStatus?: boolean
-  deliveryStatus?: boolean
-  deliveredAt?: boolean
   mercadoPagoPaymentId?: boolean
   cardLastFour?: boolean
   installments?: boolean
   created_at?: boolean
   updated_at?: boolean
   whatsappSentAt?: boolean
+  deliveredAt?: boolean
+  deliveryStatus?: boolean
 }
 
-export type ordersOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "externalReference" | "customerName" | "customerEmail" | "customerPhone" | "customerCpf" | "addressStreet" | "addressNumber" | "addressComplement" | "addressNeighborhood" | "addressCity" | "addressState" | "addressZip" | "addressReference" | "addressType" | "deliveryNotes" | "items" | "cakeSize" | "subtotal" | "deliveryPrice" | "totalPrice" | "paymentMethod" | "paymentStatus" | "deliveryStatus" | "deliveredAt" | "mercadoPagoPaymentId" | "cardLastFour" | "installments" | "created_at" | "updated_at" | "whatsappSentAt", ExtArgs["result"]["orders"]>
+export type ordersOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "externalReference" | "customerName" | "customerEmail" | "customerPhone" | "customerCpf" | "addressStreet" | "addressNumber" | "addressComplement" | "addressNeighborhood" | "addressCity" | "addressState" | "addressZip" | "addressReference" | "addressType" | "deliveryNotes" | "items" | "cakeSize" | "subtotal" | "deliveryPrice" | "totalPrice" | "paymentMethod" | "paymentStatus" | "mercadoPagoPaymentId" | "cardLastFour" | "installments" | "created_at" | "updated_at" | "whatsappSentAt" | "deliveredAt" | "deliveryStatus", ExtArgs["result"]["orders"]>
 
 export type $ordersPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "orders"
@@ -1124,14 +1124,14 @@ export type $ordersPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     totalPrice: runtime.Decimal
     paymentMethod: $Enums.PaymentMethod
     paymentStatus: $Enums.PaymentStatus
-    deliveryStatus: $Enums.DeliveryStatus
-    deliveredAt: Date | null
     mercadoPagoPaymentId: string | null
     cardLastFour: string | null
     installments: number | null
     created_at: Date
     updated_at: Date
     whatsappSentAt: Date | null
+    deliveredAt: Date | null
+    deliveryStatus: $Enums.DeliveryStatus
   }, ExtArgs["result"]["orders"]>
   composites: {}
 }
@@ -1578,14 +1578,14 @@ export interface ordersFieldRefs {
   readonly totalPrice: Prisma.FieldRef<"orders", 'Decimal'>
   readonly paymentMethod: Prisma.FieldRef<"orders", 'PaymentMethod'>
   readonly paymentStatus: Prisma.FieldRef<"orders", 'PaymentStatus'>
-  readonly deliveryStatus: Prisma.FieldRef<"orders", 'DeliveryStatus'>
-  readonly deliveredAt: Prisma.FieldRef<"orders", 'DateTime'>
   readonly mercadoPagoPaymentId: Prisma.FieldRef<"orders", 'String'>
   readonly cardLastFour: Prisma.FieldRef<"orders", 'String'>
   readonly installments: Prisma.FieldRef<"orders", 'Int'>
   readonly created_at: Prisma.FieldRef<"orders", 'DateTime'>
   readonly updated_at: Prisma.FieldRef<"orders", 'DateTime'>
   readonly whatsappSentAt: Prisma.FieldRef<"orders", 'DateTime'>
+  readonly deliveredAt: Prisma.FieldRef<"orders", 'DateTime'>
+  readonly deliveryStatus: Prisma.FieldRef<"orders", 'DeliveryStatus'>
 }
     
 

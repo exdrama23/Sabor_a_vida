@@ -1,12 +1,42 @@
 import { useState, useMemo } from 'react';
-import { Calendar, CreditCard, ShoppingBag, User, MapPin, Phone } from 'lucide-react';
+import { Calendar, CreditCard, ShoppingBag, User, MapPin, Phone, Trash2, Loader2 } from 'lucide-react';
 import { useLogsData } from '../../contexts/AdminCacheContext';
+import api from '../../axiosInstance';
 
 const Logs = () => {
   const [filter, setFilter] = useState<'all' | 'payments' | 'orders'>('all');
   const [dateFilter, setDateFilter] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const { orders, payments, initialLoading } = useLogsData();
+  const { orders, payments, initialLoading, refetch } = useLogsData();
+
+  const handleDeletePayment = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este pagamento?')) return;
+    setDeletingId(id);
+    try {
+      await api.delete(`/payment/${id}`);
+      refetch();
+    } catch (error) {
+      console.error('Erro ao excluir pagamento:', error);
+      alert('Erro ao excluir pagamento');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleDeleteOrder = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este pedido?')) return;
+    setDeletingId(id);
+    try {
+      await api.delete(`/order/${id}`);
+      refetch();
+    } catch (error) {
+      console.error('Erro ao excluir pedido:', error);
+      alert('Erro ao excluir pedido');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
@@ -128,8 +158,20 @@ const Logs = () => {
                     <p className="text-stone-500 text-center py-8">Nenhum pagamento encontrado</p>
                   ) : (
                     filteredPayments.map((payment) => (
-                      <div key={payment.id} className="border border-stone-200 rounded-xl p-3 sm:p-4 hover:shadow-sm transition-shadow">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                      <div key={payment.id} className="border border-stone-200 rounded-xl p-3 sm:p-4 hover:shadow-sm transition-shadow relative group">
+                        <button
+                          onClick={() => handleDeletePayment(payment.id)}
+                          disabled={deletingId === payment.id}
+                          className="absolute top-2 right-2 p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                          title="Excluir pagamento"
+                        >
+                          {deletingId === payment.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pr-8">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-stone-800 text-sm sm:text-base">
                               {payment.orderExternalRef}
@@ -170,8 +212,20 @@ const Logs = () => {
                     <p className="text-stone-500 text-center py-8">Nenhum pedido encontrado</p>
                   ) : (
                     filteredOrders.map((order) => (
-                      <div key={order.id} className="border border-stone-200 rounded-xl p-3 sm:p-4 hover:shadow-sm transition-shadow">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                      <div key={order.id} className="border border-stone-200 rounded-xl p-3 sm:p-4 hover:shadow-sm transition-shadow relative group">
+                        <button
+                          onClick={() => handleDeleteOrder(order.id)}
+                          disabled={deletingId === order.id}
+                          className="absolute top-2 right-2 p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                          title="Excluir pedido"
+                        >
+                          {deletingId === order.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 pr-8">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-stone-800 text-sm sm:text-base">
                               {order.externalReference}

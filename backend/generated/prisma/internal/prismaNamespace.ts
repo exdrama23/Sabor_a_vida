@@ -1033,14 +1033,14 @@ export const OrdersScalarFieldEnum = {
   totalPrice: 'totalPrice',
   paymentMethod: 'paymentMethod',
   paymentStatus: 'paymentStatus',
-  deliveryStatus: 'deliveryStatus',
-  deliveredAt: 'deliveredAt',
   mercadoPagoPaymentId: 'mercadoPagoPaymentId',
   cardLastFour: 'cardLastFour',
   installments: 'installments',
   created_at: 'created_at',
   updated_at: 'updated_at',
-  whatsappSentAt: 'whatsappSentAt'
+  whatsappSentAt: 'whatsappSentAt',
+  deliveredAt: 'deliveredAt',
+  deliveryStatus: 'deliveryStatus'
 } as const
 
 export type OrdersScalarFieldEnum = (typeof OrdersScalarFieldEnum)[keyof typeof OrdersScalarFieldEnum]
@@ -1267,20 +1267,6 @@ export type ListEnumPaymentStatusFieldRefInput<$PrismaModel> = FieldRefInputType
 
 
 /**
- * Reference to a field of type 'DeliveryStatus'
- */
-export type EnumDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeliveryStatus'>
-    
-
-
-/**
- * Reference to a field of type 'DeliveryStatus[]'
- */
-export type ListEnumDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeliveryStatus[]'>
-    
-
-
-/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -1291,6 +1277,20 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DeliveryStatus'
+ */
+export type EnumDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeliveryStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'DeliveryStatus[]'
+ */
+export type ListEnumDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeliveryStatus[]'>
     
 
 

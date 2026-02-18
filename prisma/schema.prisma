@@ -8,27 +8,25 @@ datasource db {
 }
 
 model admins {
-  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email          String          @unique @db.VarChar(254)
-  password       String          @db.VarChar(255)
-  created_at     DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime        @updatedAt @db.Timestamptz(6)
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email          String           @unique @db.VarChar(254)
+  password       String           @db.VarChar(255)
+  created_at     DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime         @updatedAt @db.Timestamptz(6)
   refresh_tokens refresh_tokens[]
 }
 
-// Tabela de Refresh Tokens para autenticação segura
 model refresh_tokens {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   admin_id   String   @db.Uuid
-  token_hash String   @db.VarChar(255) // Hash do token (nunca armazena em texto puro)
+  token_hash String   @db.VarChar(255)
   expires_at DateTime @db.Timestamptz(6)
-  ip_address String?  @db.VarChar(45) // Suporta IPv6
+  ip_address String?  @db.VarChar(45)
   user_agent String?  @db.VarChar(500)
   is_revoked Boolean  @default(false)
   created_at DateTime @default(now()) @db.Timestamptz(6)
-  
-  admin admins @relation(fields: [admin_id], references: [id], onDelete: Cascade)
-  
+  admin      admins   @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+
   @@index([admin_id])
   @@index([token_hash])
 }
@@ -43,8 +41,8 @@ model products {
   updated_at  DateTime    @updatedAt @db.Timestamptz(6)
   description String?     @db.VarChar(500)
   size        ProductSize
-  image       Bytes?      // Legado - será removido após migração
-  imageUrl    String?     @db.VarChar(500) // URL do Cloudinary
+  image       Bytes?
+  imageUrl    String?     @db.VarChar(500)
 }
 
 model orders {
@@ -71,14 +69,14 @@ model orders {
   totalPrice           Decimal        @db.Decimal(10, 2)
   paymentMethod        PaymentMethod
   paymentStatus        PaymentStatus  @default(PENDING)
-  deliveryStatus       DeliveryStatus @default(PENDING)
-  deliveredAt          DateTime?      @db.Timestamptz(6)
   mercadoPagoPaymentId String?        @unique @db.VarChar(255)
   cardLastFour         String?        @db.VarChar(4)
   installments         Int?           @default(1)
   created_at           DateTime       @default(now()) @db.Timestamptz(6)
   updated_at           DateTime       @updatedAt @db.Timestamptz(6)
   whatsappSentAt       DateTime?      @db.Timestamptz(6)
+  deliveredAt          DateTime?      @db.Timestamptz(6)
+  deliveryStatus       DeliveryStatus @default(PENDING)
 }
 
 model payments {
@@ -92,6 +90,35 @@ model payments {
   webhookData       Json?
   created_at        DateTime      @default(now()) @db.Timestamptz(6)
   updated_at        DateTime      @updatedAt @db.Timestamptz(6)
+}
+
+model delivery_config {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  originCep          String            @db.VarChar(10)
+  originAddress      String            @db.VarChar(200)
+  originNumber       String            @db.VarChar(20)
+  originNeighborhood String            @db.VarChar(100)
+  originCity         String            @db.VarChar(100)
+  originState        String            @db.VarChar(2)
+  originLat          Decimal?          @db.Decimal(10, 8)
+  originLng          Decimal?          @db.Decimal(11, 8)
+  isActive           Boolean           @default(true)
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime          @updatedAt @db.Timestamptz(6)
+  delivery_ranges    delivery_ranges[]
+}
+
+model delivery_ranges {
+  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  delivery_config_id String          @db.Uuid
+  minKm              Decimal         @db.Decimal(5, 2)
+  maxKm              Decimal         @db.Decimal(5, 2)
+  price              Decimal         @db.Decimal(10, 2)
+  created_at         DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime        @updatedAt @db.Timestamptz(6)
+  delivery_config    delivery_config @relation(fields: [delivery_config_id], references: [id], onDelete: Cascade)
+
+  @@index([delivery_config_id])
 }
 
 enum ProductSize {
@@ -116,37 +143,4 @@ enum PaymentMethod {
 enum DeliveryStatus {
   PENDING
   DELIVERED
-}
-
-// Configurações de frete baseado em distância
-model delivery_config {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  originCep      String   @db.VarChar(10)
-  originAddress  String   @db.VarChar(200)
-  originNumber   String   @db.VarChar(20)
-  originNeighborhood String @db.VarChar(100)
-  originCity     String   @db.VarChar(100)
-  originState    String   @db.VarChar(2)
-  originLat      Decimal? @db.Decimal(10, 8)
-  originLng      Decimal? @db.Decimal(11, 8)
-  isActive       Boolean  @default(true)
-  created_at     DateTime @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime @updatedAt @db.Timestamptz(6)
-  
-  delivery_ranges delivery_ranges[]
-}
-
-// Faixas de preço por distância
-model delivery_ranges {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  delivery_config_id String       @db.Uuid
-  minKm           Decimal         @db.Decimal(5, 2)
-  maxKm           Decimal         @db.Decimal(5, 2)
-  price           Decimal         @db.Decimal(10, 2)
-  created_at      DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime        @updatedAt @db.Timestamptz(6)
-  
-  delivery_config delivery_config @relation(fields: [delivery_config_id], references: [id], onDelete: Cascade)
-  
-  @@index([delivery_config_id])
 }

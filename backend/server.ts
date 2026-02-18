@@ -5,6 +5,7 @@ import path from 'path';
 import cors from 'cors';
 import fs from 'fs/promises';
 import prisma from './db';
+import { Prisma } from './generated/prisma/client';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import crypto from 'crypto';
@@ -1178,13 +1179,13 @@ router.put('/order/:id/complete', jwtValidate, async(req: Request, res: Response
 
 router.delete('/logs/cleanup', jwtValidate, async(req: Request, res: Response) => {
     try {
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
         const deletedPayments = await prisma.payments.deleteMany({
             where: {
                 created_at: {
-                    lt: oneYearAgo
+                    lt: fifteenDaysAgo
                 }
             }
         });
@@ -1192,7 +1193,7 @@ router.delete('/logs/cleanup', jwtValidate, async(req: Request, res: Response) =
         const deletedOrders = await prisma.orders.deleteMany({
             where: {
                 created_at: {
-                    lt: oneYearAgo
+                    lt: fifteenDaysAgo
                 }
             }
         });
@@ -1201,11 +1202,35 @@ router.delete('/logs/cleanup', jwtValidate, async(req: Request, res: Response) =
             success: true,
             deletedPayments: deletedPayments.count,
             deletedOrders: deletedOrders.count,
-            message: 'Limpeza de logs realizada com sucesso'
+            message: 'Limpeza de logs realizada com sucesso (logs com mais de 15 dias)'
         });
     } catch (error) {
         console.error('Erro ao limpar logs:', error);
         res.status(500).json({ error: 'Erro ao limpar logs' });
+    }
+});
+
+// Deletar pagamento individual
+router.delete('/payment/:id', jwtValidate, async(req: Request, res: Response) => {
+    try {
+        const id = req.params.id as string;
+        await prisma.payments.delete({ where: { id } });
+        res.status(200).json({ success: true, message: 'Pagamento deletado' });
+    } catch (error) {
+        console.error('Erro ao deletar pagamento:', error);
+        res.status(500).json({ error: 'Erro ao deletar pagamento' });
+    }
+});
+
+// Deletar pedido individual
+router.delete('/order/:id', jwtValidate, async(req: Request, res: Response) => {
+    try {
+        const id = req.params.id as string;
+        await prisma.orders.delete({ where: { id } });
+        res.status(200).json({ success: true, message: 'Pedido deletado' });
+    } catch (error) {
+        console.error('Erro ao deletar pedido:', error);
+        res.status(500).json({ error: 'Erro ao deletar pedido' });
     }
 });
 
@@ -1348,11 +1373,12 @@ router.post('/delivery/config', jwtValidate, async(req: Request, res: Response) 
             console.warn('Não foi possível obter coordenadas para o CEP de origem:', originCep);
         }
 
-        await prisma.delivery_config.updateMany({
-            where: { isActive: true },
-            data: { isActive: false }
+        // Deletar todas as configs antigas (incluindo suas ranges via cascade)
+        await prisma.delivery_config.deleteMany({
+            where: { isActive: true }
         });
 
+        // Criar nova config
         const newConfig = await prisma.delivery_config.create({
             data: {
                 originCep: originCep.replace(/\D/g, ''),
@@ -1522,12 +1548,10 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
         console.log('=== FIM DEBUG ===');
         console.log('rangeFound:', rangeFound, 'deliveryPrice:', deliveryPrice);
 
-        // Se não encontrou nenhuma faixa que contenha a distância
         if (!rangeFound && config.delivery_ranges.length > 0) {
             const lastRange = config.delivery_ranges[config.delivery_ranges.length - 1];
             const maxConfiguredKm = Number(lastRange.maxKm);
-            
-            // Distância maior que o máximo configurado = fora da área
+
             if (distance >= maxConfiguredKm) {
                 console.log(`Fora da área: ${distance.toFixed(2)}km >= ${maxConfiguredKm}km (máximo)`);
                 return res.status(200).json({ 
@@ -1538,14 +1562,12 @@ router.post('/delivery/calculate', async(req: Request, res: Response) => {
                     message: `Fora da área de entrega (${distance.toFixed(1)} km). Máximo: ${maxConfiguredKm} km`
                 });
             }
-            
-            // Distância menor que o mínimo da primeira faixa (caso raro)
+
             const firstRange = config.delivery_ranges[0];
             if (distance < Number(firstRange.minKm)) {
                 deliveryPrice = Number(firstRange.price);
                 console.log(`Distância menor que mínimo, usando primeira faixa: R$${deliveryPrice}`);
             } else {
-                // Fallback: usar última faixa (não deveria chegar aqui)
                 deliveryPrice = Number(lastRange.price);
                 console.log(`Fallback para última faixa: R$${deliveryPrice}`);
             }
@@ -1593,3 +1615,55 @@ console.log(frontend)
 console.log(isProd)
 
 server.listen(port, ()=>console.log(`Servidor rodando em http://localhost:${port}`));
+
+async function cleanupOldLogs() {
+    try {
+        const fifteenDaysAgo = new Date();
+        fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
+        const deletedPayments = await prisma.payments.deleteMany({
+            where: { created_at: { lt: fifteenDaysAgo } }
+        });
+
+        const deletedOrders = await prisma.orders.deleteMany({
+            where: { created_at: { lt: fifteenDaysAgo } }
+        });
+
+        const deletedTokens = await prisma.refresh_tokens.deleteMany({
+            where: {
+                OR: [
+                    { expires_at: { lt: new Date() } },
+                    { is_revoked: true }
+                ]
+            }
+        });
+
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        await prisma.payments.updateMany({
+            where: {
+                created_at: { lt: sevenDaysAgo },
+                webhookData: { not: Prisma.DbNull }
+            },
+            data: { webhookData: Prisma.DbNull }
+        });
+
+        const productsWithLegacyImage = await prisma.products.updateMany({
+            where: { 
+                image: { not: null },
+                imageUrl: { not: null }
+            },
+            data: { image: null }
+        });
+
+        if (deletedPayments.count > 0 || deletedOrders.count > 0 || deletedTokens.count > 0 || productsWithLegacyImage.count > 0) {
+            console.log(`[Cleanup] Removidos: ${deletedPayments.count} pagamentos, ${deletedOrders.count} pedidos, ${deletedTokens.count} tokens, ${productsWithLegacyImage.count} imagens legado`);
+        }
+    } catch (error) {
+        console.error('[Cleanup] Erro ao limpar logs antigos:', error);
+    }
+}
+
+setTimeout(cleanupOldLogs, 60 * 1000);
+
+setInterval(cleanupOldLogs, 24 * 60 * 60 * 1000);

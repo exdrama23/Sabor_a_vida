@@ -142,14 +142,14 @@ export const OrdersScalarFieldEnum = {
   totalPrice: 'totalPrice',
   paymentMethod: 'paymentMethod',
   paymentStatus: 'paymentStatus',
-  deliveryStatus: 'deliveryStatus',
-  deliveredAt: 'deliveredAt',
   mercadoPagoPaymentId: 'mercadoPagoPaymentId',
   cardLastFour: 'cardLastFour',
   installments: 'installments',
   created_at: 'created_at',
   updated_at: 'updated_at',
-  whatsappSentAt: 'whatsappSentAt'
+  whatsappSentAt: 'whatsappSentAt',
+  deliveredAt: 'deliveredAt',
+  deliveryStatus: 'deliveryStatus'
 } as const
 
 export type OrdersScalarFieldEnum = (typeof OrdersScalarFieldEnum)[keyof typeof OrdersScalarFieldEnum]
