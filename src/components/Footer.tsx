@@ -22,7 +22,7 @@ const Footer = () => {
           </button>
             </div>
             <p className="text-stone-500 text-sm">
-              Transformando momentos em memórias através da confeitaria de excelência.
+              Transformando momentos em memórias através da confeitaria de excelência..
             </p>
           </div>
 
