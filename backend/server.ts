@@ -287,15 +287,13 @@ router.delete('/product/:id', jwtValidate, async(req: Request, res: Response)=>{
     try {
         const id = req.params.id as string;
         
-        // Busca produto para deletar imagem do Cloudinary
         const product = await prisma.products.findUnique({ 
             where: { id }, 
             select: { imageUrl: true } 
         });
         
         await prisma.products.delete({where: {id}});
-        
-        // Deleta imagem do Cloudinary
+
         if (product?.imageUrl) {
             await deleteFromCloudinary(product.imageUrl);
         }
@@ -1210,7 +1208,6 @@ router.delete('/logs/cleanup', jwtValidate, async(req: Request, res: Response) =
     }
 });
 
-// Deletar pagamento individual
 router.delete('/payment/:id', jwtValidate, async(req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
@@ -1222,7 +1219,6 @@ router.delete('/payment/:id', jwtValidate, async(req: Request, res: Response) =>
     }
 });
 
-// Deletar pedido individual
 router.delete('/order/:id', jwtValidate, async(req: Request, res: Response) => {
     try {
         const id = req.params.id as string;
@@ -1352,7 +1348,6 @@ router.post('/delivery/config', jwtValidate, async(req: Request, res: Response) 
             return res.status(400).json({ error: 'Faixas de preço são obrigatórias' });
         }
 
-        // Validar faixas - não permitir minKm >= maxKm
         for (const range of ranges) {
             const minKm = parseFloat(range.minKm);
             const maxKm = parseFloat(range.maxKm);
@@ -1373,12 +1368,10 @@ router.post('/delivery/config', jwtValidate, async(req: Request, res: Response) 
             console.warn('Não foi possível obter coordenadas para o CEP de origem:', originCep);
         }
 
-        // Deletar todas as configs antigas (incluindo suas ranges via cascade)
         await prisma.delivery_config.deleteMany({
             where: { isActive: true }
         });
 
-        // Criar nova config
         const newConfig = await prisma.delivery_config.create({
             data: {
                 originCep: originCep.replace(/\D/g, ''),

@@ -411,7 +411,6 @@ export async function logoutHandler(req: Request, res: Response) {
     res.json({ success: true });
   } catch (error) {
     console.error('[Auth] Erro no logout:', error);
-    // Mesmo com erro, limpa o cookie
     clearRefreshTokenCookie(res);
     res.json({ success: true });
   }

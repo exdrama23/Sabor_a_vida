@@ -30,7 +30,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   image: string;
-  productId?: string; // original product id (useful when cart item id is composite)
+  productId?: string; 
   size?: string;
   flavor?: string;
   topping?: string;
