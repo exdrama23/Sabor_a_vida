@@ -299,18 +299,31 @@ export async function loginHandler(req: Request, res: Response) {
   const { ip } = (req as any).rateLimitInfo || { ip: getClientIp(req) };
   const userAgent = req.headers['user-agent'] || 'unknown';
 
+  console.log(`[Auth DEBUG] Tentativa de login:`);
+  console.log(`[Auth DEBUG] Email recebido: "${email}"`);
+  console.log(`[Auth DEBUG] Senha recebida: "${password ? '***' : 'VAZIA'}"`);
+
   try {
     const admin = await prisma.admins.findUnique({ where: { email } });
+    console.log(`[Auth DEBUG] Admin encontrado: ${admin ? 'SIM' : 'NÃO'}`);
+    if (admin) {
+      console.log(`[Auth DEBUG] Email no banco: "${admin.email}"`);
+      console.log(`[Auth DEBUG] Hash no banco: "${admin.password.substring(0, 20)}..."`);
+    }
 
     if (!admin) {
       recordFailedAttempt(ip);
+      console.log(`[Auth DEBUG] Falha: Admin não encontrado`);
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
     const isValidPassword = await verifyPassword(password, admin.password);
 
+    console.log(`[Auth DEBUG] Senha válida: ${isValidPassword}`);
+
     if (!isValidPassword) {
       recordFailedAttempt(ip);
+      console.log(`[Auth DEBUG] Falha: Senha inválida`);
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
