@@ -9,7 +9,7 @@ export interface HeaderProps {
 export const getProductImageUrl = (productId: string): string => {
   const baseURL = window.location.hostname.includes('localhost') 
     ? 'http://localhost:2923' 
-    : 'https://wealthy-courtney-sabor-a-vida-f6291b31.koyeb.app';
+    : window.location.origin;  
   return `${baseURL}/api/product/image/${productId}`;
 };
 
